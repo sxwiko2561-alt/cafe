@@ -463,6 +463,7 @@ function clearMyOrder() {
 }
 
 let lastKnownStatus = localStorage.getItem("myOrderStatus") || "";
+let lastRenderedStatus = "";
 
 async function checkMyOrderStatus() {
   const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
@@ -470,14 +471,19 @@ async function checkMyOrderStatus() {
   const { data } = await sb.from("orders").select("*").eq("id", myId).single();
   if (!data) return;
 
-  // ถ้าสถานะเปลี่ยน trigger เสียง + notification
+  // trigger เสียง + notification เมื่อสถานะเปลี่ยน
   if (data.status !== lastKnownStatus && lastKnownStatus !== "") {
     if (data.status === "accepted") notifyStatusChange("✅ ร้านรับออเดอร์แล้ว กำลังเตรียม...", data.name);
     if (data.status === "ready")    notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", data.name);
   }
   lastKnownStatus = data.status;
   localStorage.setItem("myOrderStatus", data.status);
-  renderOrderBar(data);
+
+  // render เฉพาะเมื่อสถานะเปลี่ยนจริง ป้องกันกระพริบ
+  if (data.status !== lastRenderedStatus) {
+    lastRenderedStatus = data.status;
+    renderOrderBar(data);
+  }
 }
 
 // Real-time subscription
