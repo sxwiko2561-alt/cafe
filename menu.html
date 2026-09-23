@@ -448,6 +448,10 @@
       <input id="custName" type="text" placeholder="ชื่อของคุณ" />
     </div>
     <div class="form-field">
+      <label>สถานที่ส่ง / มารับเอง</label>
+      <input id="custLocation" type="text" placeholder="เช่น โต๊ะ A1, มารับเองที่เคาน์เตอร์" />
+    </div>
+    <div class="form-field">
       <label>เบอร์โทร</label>
       <input id="custPhone" type="tel" placeholder="08x-xxx-xxxx" />
     </div>
@@ -465,7 +469,6 @@
       <label>อุณหภูมิ</label>
       <div class="tag-group" id="tempTags">
         <button class="tag active" data-val="เย็น"><i data-lucide="snowflake"></i>เย็น</button>
-        <button class="tag" data-val="ร้อน"><i data-lucide="flame"></i>ร้อน</button>
         <button class="tag" data-val="ปั่น"><i data-lucide="wind"></i>ปั่น</button>
       </div>
     </div>
@@ -634,8 +637,9 @@ async function submitOrder() {
 
   const btn = document.getElementById("btnOrder");
   btn.disabled = true;
-  const phone = document.getElementById("custPhone").value.trim();
-  const note  = document.getElementById("custNote").value.trim();
+  const phone    = document.getElementById("custPhone").value.trim();
+  const location = document.getElementById("custLocation").value.trim();
+  const note     = document.getElementById("custNote").value.trim();
   const total = Object.keys(cart).reduce((s,id) => s + MENU.find(m=>m.id==id).price*cart[id], 0);
   const items = Object.keys(cart).map(id => {
     const item = MENU.find(m=>m.id==id);
@@ -643,7 +647,7 @@ async function submitOrder() {
   });
 
   const { data, error } = await sb.from("orders").insert([{
-    name, phone, note, sweet, temp,
+    name, phone, note, sweet, temp, location,
     items: JSON.stringify(items), total,
     status: "pending", timestamp: Date.now()
   }]).select().single();
@@ -656,9 +660,10 @@ async function submitOrder() {
   lastKnownStatus = "pending"; lastRenderedStatus = "";
 
   cart = {}; renderCart();
-  document.getElementById("custName").value = "";
-  document.getElementById("custPhone").value = "";
-  document.getElementById("custNote").value = "";
+  document.getElementById("custName").value     = "";
+  document.getElementById("custLocation").value = "";
+  document.getElementById("custPhone").value    = "";
+  document.getElementById("custNote").value     = "";
 
   document.getElementById("modalOrderId").textContent = `#${String(data.order_seq).padStart(4,"0")}`;
   document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} ×${i.qty}`).join(", ") + `<br>ความหวาน: ${sweet} · ${temp}`;

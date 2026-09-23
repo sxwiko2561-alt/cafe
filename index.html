@@ -356,6 +356,7 @@ function renderOrders() {
         <div class="order-meta">
           <span class="meta-tag">${o.sweet}</span>
           <span class="meta-tag">${o.temp}</span>
+          ${o.location ? `<span class="meta-tag" style="background:#e8f4fd;color:#1565c0">📍 ${o.location}</span>` : ""}
           ${o.note ? `<span class="meta-tag note">📌 ${o.note}</span>` : ""}
         </div>
         <div class="order-total">รวม ${o.total} ฿</div>
