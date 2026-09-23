@@ -260,16 +260,14 @@ function subscribeOrders() {
 }
 
 async function acceptOrder(id) {
-  console.log("acceptOrder called with id:", id);
-  const { data, error } = await sb.from("orders").update({ status: "accepted" }).eq("id", id).select();
-  console.log("result:", data, error);
+  const { data, error } = await sb.from("orders").update({ status: "accepted" }).eq("id", Number(id)).select();
+  if (error) console.error("acceptOrder error:", error);
   loadOrders();
 }
 
 async function readyOrder(id) {
-  console.log("readyOrder called with id:", id);
-  const { data, error } = await sb.from("orders").update({ status: "ready" }).eq("id", id).select();
-  console.log("result:", data, error);
+  const { data, error } = await sb.from("orders").update({ status: "ready" }).eq("id", Number(id)).select();
+  if (error) console.error("readyOrder error:", error);
   loadOrders();
 }
 
@@ -296,6 +294,8 @@ function renderOrders() {
   const all     = allOrders;
   const pending = all.filter(o => o.status === "pending");
   const revenue = all.reduce((s, o) => s + (o.total || 0), 0);
+
+  console.log("renderOrders: sample id =", all[0]?.id, "type =", typeof all[0]?.id);
 
   document.getElementById("statTotal").textContent   = all.length;
   document.getElementById("statPending").textContent = pending.length;
