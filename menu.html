@@ -514,8 +514,13 @@ const MENU = [
 let cart = {}, sweet = "ปกติ", temp = "เย็น";
 
 // ===== SHOP STATE =====
-function applyShopState() {
-  const isOpen  = localStorage.getItem("shopOpen") !== "false";
+async function loadShopState() {
+  const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
+  const isOpen = data ? data.value === "true" : true;
+  applyShopState(isOpen);
+}
+
+function applyShopState(isOpen) {
   const pill    = document.getElementById("statusPill");
   const overlay = document.getElementById("closedOverlay");
   if (isOpen) {
@@ -528,7 +533,12 @@ function applyShopState() {
     pill.innerHTML = '<span class="dot"></span> ปิดรับออเดอร์';
   }
 }
-window.addEventListener("storage", e => { if (e.key === "shopOpen") applyShopState(); });
+
+// realtime subscribe shop state
+sb.channel("shop-state")
+  .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings", filter: "key=eq.shopOpen" },
+    payload => { applyShopState(payload.new.value === "true"); })
+  .subscribe();
 
 // ===== MENU =====
 function renderMenu() {
@@ -612,8 +622,9 @@ function initTags() {
 
 // ===== SUBMIT =====
 async function submitOrder() {
-  const isOpen = localStorage.getItem("shopOpen") !== "false";
-  if (!isOpen) { applyShopState(); return; }
+  const { data: setting } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
+  const isOpen = setting ? setting.value === "true" : true;
+  if (!isOpen) { applyShopState(false); return; }
   const name = document.getElementById("custName").value.trim();
   if (!name) { document.getElementById("custName").focus(); return; }
   if (!Object.keys(cart).length) return;
@@ -758,12 +769,13 @@ function closeModal() { document.getElementById("modalOverlay").classList.remove
 function scrollToCart() { document.getElementById("cartBox").scrollIntoView({ behavior:"smooth", block:"center" }); }
 
 // ===== INIT =====
-renderMenu(); renderCart(); initTags(); applyShopState();
+renderMenu(); renderCart(); initTags();
+loadShopState();
 checkMyOrderStatus().then(() => { lastRenderedStatus = lastKnownStatus; subscribeMyOrder(); });
 requestNotifyPermission();
 lucide.createIcons();
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") checkMyOrderStatus();
+  if (document.visibilityState === "visible") { loadShopState(); checkMyOrderStatus(); }
 });
 </script>
 </body>

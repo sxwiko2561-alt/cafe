@@ -177,6 +177,7 @@ function doLogin() {
   if (val === ADMIN_PASS) {
     sessionStorage.setItem("adminAuth", "1");
     document.getElementById("loginOverlay").classList.add("hidden");
+    loadShopState();
     loadOrders();
     subscribeOrders();
   } else {
@@ -202,7 +203,13 @@ function checkAuth() {
 }
 
 // ===== SHOP TOGGLE =====
-let isOpen = localStorage.getItem("shopOpen") !== "false";
+let isOpen = true;
+
+async function loadShopState() {
+  const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
+  if (data) isOpen = data.value === "true";
+  applyShopState();
+}
 
 function applyShopState() {
   const track = document.getElementById("toggleTrack");
@@ -215,7 +222,8 @@ function applyShopState() {
     track.classList.remove("on"); label.textContent = "ปิดรับออเดอร์";
     badge.textContent = "✦ ปิดรับออเดอร์"; badge.classList.add("closed");
   }
-  localStorage.setItem("shopOpen", isOpen);
+  // บันทึกลง Supabase
+  sb.from("settings").update({ value: String(isOpen) }).eq("key", "shopOpen").then();
 }
 
 (function() {
@@ -351,9 +359,9 @@ function renderOrders() {
 // ===== INIT =====
 applyShopState();
 checkAuth();
-// ถ้า session ยังอยู่ให้ load เลยไม่ต้อง login ใหม่
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
+  loadShopState();
   loadOrders();
   subscribeOrders();
 }
