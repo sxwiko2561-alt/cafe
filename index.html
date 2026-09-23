@@ -230,7 +230,8 @@ async function toggleShopState() {
   if (newState === true) {
     // Opening: delete all existing orders and reset sequence
     await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await sb.rpc("reset_order_seq").catch(() => {});
+    const { error: rpcErr } = await sb.rpc("reset_order_seq");
+    if (rpcErr) console.warn("reset_order_seq:", rpcErr.message);
     loadOrders();
   }
 
