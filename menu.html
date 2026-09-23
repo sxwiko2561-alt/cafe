@@ -401,6 +401,7 @@ async function submitOrder() {
   if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
 
   sessionStorage.setItem("myOrderId", data.id);
+  localStorage.setItem("myOrderId", data.id);  // เก็บถาวรไม่หายเมื่อปิดแท็บ
 
   cart = {};
   renderCart();
@@ -445,12 +446,22 @@ function renderOrderBar(order) {
       <div style="font-size:0.82rem;opacity:0.85">ออเดอร์ #${String(order.id).slice(-4).padStart(4,"0")} · ${order.name} · ${timeStr}</div>
       <div style="font-size:0.8rem;margin-top:3px;opacity:0.75">${itemList} · ${order.total} ฿</div>
       <div style="display:inline-flex;gap:4px;align-items:center;margin-top:10px">${stepDots(STATUS_STEP[st]||1)}</div>
+      ${st === "ready" ? `<div style="margin-top:12px"><button onclick="clearMyOrder()" style="background:#1565c0;color:#fff;border:none;border-radius:10px;padding:8px 20px;font-family:inherit;font-weight:700;font-size:0.85rem;cursor:pointer">รับของแล้ว / สั่งใหม่</button></div>` : ""}
     </div>`;
   lucide.createIcons();
 }
 
+function clearMyOrder() {
+  localStorage.removeItem("myOrderId");
+  sessionStorage.removeItem("myOrderId");
+  if (realtimeSub) { realtimeSub.unsubscribe(); realtimeSub = null; }
+  const bar = document.getElementById("myOrderBar");
+  bar.style.display = "none";
+  bar.innerHTML = "";
+}
+
 async function checkMyOrderStatus() {
-  const myId = sessionStorage.getItem("myOrderId");
+  const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
   if (!myId) return;
   const { data } = await sb.from("orders").select("*").eq("id", myId).single();
   if (data) renderOrderBar(data);
@@ -459,14 +470,50 @@ async function checkMyOrderStatus() {
 // Real-time subscription
 let realtimeSub = null;
 function subscribeMyOrder() {
-  const myId = sessionStorage.getItem("myOrderId");
+  const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
   if (!myId) return;
   if (realtimeSub) realtimeSub.unsubscribe();
-  realtimeSub = sb.channel("order-status")
+  realtimeSub = sb.channel("order-status-" + myId)
     .on("postgres_changes", {
       event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${myId}`
-    }, payload => { renderOrderBar(payload.new); })
+    }, payload => {
+      renderOrderBar(payload.new);
+      // ปัญหา 3: แจ้งเตือนเมื่อสินค้าพร้อม
+      if (payload.new.status === "ready") {
+        notifyReady(payload.new.name);
+      }
+    })
     .subscribe();
+}
+
+// ===== WEB NOTIFICATION =====
+function requestNotifyPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function notifyReady(name) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("☕ สินค้าพร้อมแล้ว!", {
+      body: `คุณ ${name} มารับเครื่องดื่มได้เลยครับ!`,
+      icon: "images/matcha-latte.jpeg"
+    });
+  }
+  // เสียงแจ้งเตือน
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+      o.start(ctx.currentTime + i * 0.15);
+      o.stop(ctx.currentTime + i * 0.15 + 0.3);
+    });
+  } catch(e) {}
 }
 
 function closeModal() { document.getElementById("modalOverlay").classList.remove("show"); }
@@ -478,6 +525,7 @@ renderCart();
 initTags();
 applyShopState();
 checkMyOrderStatus().then(subscribeMyOrder);
+requestNotifyPermission();
 lucide.createIcons();
 </script>
 </body>
