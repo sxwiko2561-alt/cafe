@@ -223,19 +223,14 @@ function renderShopUI() {
 // Called when hold-toggle fires — saves to Supabase and handles side effects
 async function toggleShopState() {
   const newState = !isOpen;
-  console.log("toggleShopState: saving", newState, "to Supabase");
-
   const { error } = await sb.from("settings").update({ value: String(newState) }).eq("key", "shopOpen");
-  if (error) { console.error("toggleShopState save error:", error); return; }
-  console.log("toggleShopState: saved successfully");
-
+  if (error) { console.error("toggleShopState error:", error); return; }
   if (newState === true) {
     await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     const { error: rpcErr } = await sb.rpc("reset_order_seq");
     if (rpcErr) console.warn("reset_order_seq:", rpcErr.message);
     loadOrders();
   }
-
   isOpen = newState;
   renderShopUI();
 }
