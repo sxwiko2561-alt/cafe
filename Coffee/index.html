@@ -170,13 +170,14 @@ const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ===== LOGIN =====
-const ADMIN_PASS = "123";
+const ADMIN_PASS = "Earth54321";
 
 function doLogin() {
   const val = document.getElementById("pwInput").value;
   if (val === ADMIN_PASS) {
     sessionStorage.setItem("adminAuth", "1");
     document.getElementById("loginOverlay").classList.add("hidden");
+    loadShopState();
     loadOrders();
     subscribeOrders();
   } else {
@@ -202,20 +203,36 @@ function checkAuth() {
 }
 
 // ===== SHOP TOGGLE =====
-let isOpen = localStorage.getItem("shopOpen") !== "false";
+let isOpen = true;
+
+async function loadShopState() {
+  const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
+  if (data) isOpen = data.value === "true";
+  applyShopState();
+}
 
 function applyShopState() {
   const track = document.getElementById("toggleTrack");
   const label = document.getElementById("toggleLabel");
   const badge = document.getElementById("statusBadge");
+  const wasOpen = track.classList.contains("on");
+
   if (isOpen) {
     track.classList.add("on"); label.textContent = "เปิดรับออเดอร์";
     badge.textContent = "✦ เปิดรับออเดอร์"; badge.classList.remove("closed");
+    // ถ้าเพิ่งเปิดร้าน (จากปิด→เปิด) ให้ reset orders
+    if (!wasOpen) {
+      sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000").then(() => {
+        sb.rpc("reset_order_seq").catch(() => {});
+        loadOrders();
+      });
+    }
   } else {
     track.classList.remove("on"); label.textContent = "ปิดรับออเดอร์";
     badge.textContent = "✦ ปิดรับออเดอร์"; badge.classList.add("closed");
   }
-  localStorage.setItem("shopOpen", isOpen);
+  // บันทึกลง Supabase
+  sb.from("settings").update({ value: String(isOpen) }).eq("key", "shopOpen").then();
 }
 
 (function() {
@@ -260,17 +277,23 @@ function subscribeOrders() {
 }
 
 async function acceptOrder(id) {
-  await sb.from("orders").update({ status: "accepted" }).eq("id", id);
+  const { data, error } = await sb.from("orders").update({ status: "accepted" }).eq("id", id).select();
+  if (error) console.error("acceptOrder error:", error);
+  else console.log("acceptOrder ok:", data);
   loadOrders();
 }
 
 async function readyOrder(id) {
-  await sb.from("orders").update({ status: "ready" }).eq("id", id);
+  const { data, error } = await sb.from("orders").update({ status: "ready" }).eq("id", id).select();
+  if (error) console.error("readyOrder error:", error);
+  else console.log("readyOrder ok:", data);
   loadOrders();
 }
 
 async function clearDone() {
   await sb.from("orders").delete().eq("status", "ready");
+  // reset order_seq sequence ให้เริ่ม 1 ใหม่
+  await sb.rpc("reset_order_seq").catch(() => {});
   loadOrders();
 }
 
@@ -292,6 +315,8 @@ function renderOrders() {
   const all     = allOrders;
   const pending = all.filter(o => o.status === "pending");
   const revenue = all.reduce((s, o) => s + (o.total || 0), 0);
+
+  console.log("renderOrders: sample id =", all[0]?.id, "type =", typeof all[0]?.id);
 
   document.getElementById("statTotal").textContent   = all.length;
   document.getElementById("statPending").textContent = pending.length;
@@ -319,7 +344,7 @@ function renderOrders() {
     <div class="order-card ${isReady?"ready":isAccepted?"accepted":""}" id="card-${o.id}">
       <div class="order-info">
         <div class="order-header">
-          <span class="order-id-tag">#${shortId}</span>
+          <span class="order-id-tag">#${String(o.order_seq || "").padStart(4,"0")}</span>
           <span class="order-name">${o.name}</span>
           ${o.phone ? `<span style="font-size:0.78rem;color:#aaa">📞 ${o.phone}</span>` : ""}
           <span class="order-time">${formatDateTime(o.timestamp)}</span>
@@ -334,8 +359,8 @@ function renderOrders() {
         <div><span class="status-chip ${o.status}">${statusLabel[o.status]||""}</span></div>
       </div>
       <div class="action-btns">
-        ${isPending  ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">✓</button>` : ""}
-        ${isAccepted ? `<button class="btn-action ready"  onclick="readyOrder('${o.id}')">🛍️</button>` : ""}
+        ${isPending  ? `<button class="btn-action accept" data-id="${o.id}" onclick="acceptOrder(this.dataset.id)">✓</button>` : ""}
+        ${isAccepted ? `<button class="btn-action ready"  data-id="${o.id}" onclick="readyOrder(this.dataset.id)">🛍️</button>` : ""}
         ${isReady    ? `<button class="btn-action done">✓</button>` : ""}
       </div>
     </div>`;
@@ -345,9 +370,9 @@ function renderOrders() {
 // ===== INIT =====
 applyShopState();
 checkAuth();
-// ถ้า session ยังอยู่ให้ load เลยไม่ต้อง login ใหม่
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
+  loadShopState();
   loadOrders();
   subscribeOrders();
 }
