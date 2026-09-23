@@ -453,18 +453,31 @@ function renderOrderBar(order) {
 
 function clearMyOrder() {
   localStorage.removeItem("myOrderId");
+  localStorage.removeItem("myOrderStatus");
   sessionStorage.removeItem("myOrderId");
+  lastKnownStatus = "";
   if (realtimeSub) { realtimeSub.unsubscribe(); realtimeSub = null; }
   const bar = document.getElementById("myOrderBar");
   bar.style.display = "none";
   bar.innerHTML = "";
 }
 
+let lastKnownStatus = localStorage.getItem("myOrderStatus") || "";
+
 async function checkMyOrderStatus() {
   const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
   if (!myId) return;
   const { data } = await sb.from("orders").select("*").eq("id", myId).single();
-  if (data) renderOrderBar(data);
+  if (!data) return;
+
+  // ถ้าสถานะเปลี่ยน trigger เสียง + notification
+  if (data.status !== lastKnownStatus && lastKnownStatus !== "") {
+    if (data.status === "accepted") notifyStatusChange("✅ ร้านรับออเดอร์แล้ว กำลังเตรียม...", data.name);
+    if (data.status === "ready")    notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", data.name);
+  }
+  lastKnownStatus = data.status;
+  localStorage.setItem("myOrderStatus", data.status);
+  renderOrderBar(data);
 }
 
 // Real-time subscription
@@ -474,33 +487,28 @@ function subscribeMyOrder() {
   if (!myId) return;
   if (realtimeSub) realtimeSub.unsubscribe();
   realtimeSub = sb.channel("order-status-" + myId)
-    .on("postgres_changes", {
-      event: "UPDATE", schema: "public", table: "orders"
-    }, payload => {
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, payload => {
       if (String(payload.new.id) === String(myId)) {
+        if (payload.new.status !== lastKnownStatus) {
+          if (payload.new.status === "accepted") notifyStatusChange("✅ ร้านรับออเดอร์แล้ว กำลังเตรียม...", payload.new.name);
+          if (payload.new.status === "ready")    notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", payload.new.name);
+        }
+        lastKnownStatus = payload.new.status;
+        localStorage.setItem("myOrderStatus", payload.new.status);
         renderOrderBar(payload.new);
-        if (payload.new.status === "ready") notifyReady(payload.new.name);
       }
     })
     .subscribe();
-  // poll ทุก 3 วิ เป็น fallback
   setInterval(checkMyOrderStatus, 3000);
 }
 
-// ===== WEB NOTIFICATION =====
 function requestNotifyPermission() {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
 }
 
-function notifyReady(name) {
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("☕ สินค้าพร้อมแล้ว!", {
-      body: `คุณ ${name} มารับเครื่องดื่มได้เลยครับ!`,
-      icon: "images/matcha-latte.jpeg"
-    });
-  }
+function notifyStatusChange(message, name) {
   // เสียงแจ้งเตือน
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -515,7 +523,16 @@ function notifyReady(name) {
       o.stop(ctx.currentTime + i * 0.15 + 0.3);
     });
   } catch(e) {}
+  // Web Notification
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("☕ Zebros Coffee", {
+      body: `${message}`,
+      icon: "images/matcha-latte.jpeg"
+    });
+  }
 }
+
+function notifyReady(name) { notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", name); }
 
 function closeModal() { document.getElementById("modalOverlay").classList.remove("show"); }
 function scrollToCart() { document.querySelector(".section-title").scrollIntoView({ behavior: "smooth" }); }
