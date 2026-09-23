@@ -283,6 +283,8 @@ async function readyOrder(id) {
 
 async function clearDone() {
   await sb.from("orders").delete().eq("status", "ready");
+  // reset order_seq sequence ให้เริ่ม 1 ใหม่
+  await sb.rpc("reset_order_seq").catch(() => {});
   loadOrders();
 }
 
@@ -333,7 +335,7 @@ function renderOrders() {
     <div class="order-card ${isReady?"ready":isAccepted?"accepted":""}" id="card-${o.id}">
       <div class="order-info">
         <div class="order-header">
-          <span class="order-id-tag">#${shortId}</span>
+          <span class="order-id-tag">#${String(o.order_seq || "").padStart(4,"0")}</span>
           <span class="order-name">${o.name}</span>
           ${o.phone ? `<span style="font-size:0.78rem;color:#aaa">📞 ${o.phone}</span>` : ""}
           <span class="order-time">${formatDateTime(o.timestamp)}</span>

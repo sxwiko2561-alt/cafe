@@ -657,7 +657,7 @@ async function submitOrder() {
   document.getElementById("custPhone").value = "";
   document.getElementById("custNote").value = "";
 
-  document.getElementById("modalOrderId").textContent = `#${String(data.id).slice(-4).padStart(4,"0")}`;
+  document.getElementById("modalOrderId").textContent = `#${String(data.order_seq).padStart(4,"0")}`;
   document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} ×${i.qty}`).join(", ") + `<br>ความหวาน: ${sweet} · ${temp}`;
   document.getElementById("modalOverlay").classList.add("show");
 
@@ -695,7 +695,7 @@ function renderOrderBar(order) {
         <div class="osc-icon-wrap ${st}"><i data-lucide="${STATUS_ICON[st]||"clock"}"></i></div>
         <div>
           <div class="osc-title">${STATUS_LABEL[st]||""}</div>
-          <div class="osc-sub">ออเดอร์ #${String(order.id).slice(-4).padStart(4,"0")} · ${order.name} · ${items.map(i=>`${i.name}×${i.qty}`).join(", ")}</div>
+          <div class="osc-sub">ออเดอร์ #${String(order.order_seq || order.id).padStart(4,"0")} · ${order.name} · ${items.map(i=>`${i.name}×${i.qty}`).join(", ")}</div>
         </div>
       </div>
       <div class="step-bar">${stepHTML}</div>
