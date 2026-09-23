@@ -23,7 +23,7 @@
       --radius-sm: 10px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 
     body {
       font-family: 'Sarabun', 'Inter', sans-serif;
@@ -187,7 +187,6 @@
       border-radius: var(--radius);
       overflow: hidden; cursor: pointer;
       transition: transform 0.18s, box-shadow 0.18s;
-      -webkit-user-select: none;
     }
     .menu-card:active { transform: scale(0.97); }
     .menu-card:hover  { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
@@ -513,11 +512,15 @@ const MENU = [
 
 let cart = {}, sweet = "ปกติ", temp = "เย็น";
 
-// ===== SHOP STATE =====
-async function loadShopState() {
-  const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
-  const isOpen = data ? data.value === "true" : true;
-  applyShopState(isOpen);
+// ===== SHOP STATE — simple polling every 3 seconds =====
+async function pollShopState() {
+  try {
+    const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
+    const isOpen = data ? data.value === "true" : true;
+    applyShopState(isOpen);
+  } catch (e) {
+    // network error — leave current state as-is
+  }
 }
 
 function applyShopState(isOpen) {
@@ -534,15 +537,9 @@ function applyShopState(isOpen) {
   }
 }
 
-// realtime subscribe shop state
-sb.channel("shop-state")
-  .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings" },
-    payload => {
-      if (payload.new.key === "shopOpen") {
-        applyShopState(payload.new.value === "true");
-      }
-    })
-  .subscribe();
+// Poll immediately on load, then every 3 seconds
+pollShopState();
+setInterval(pollShopState, 3000);
 
 // ===== MENU =====
 function renderMenu() {
@@ -626,9 +623,11 @@ function initTags() {
 
 // ===== SUBMIT =====
 async function submitOrder() {
+  // Check shop state before submitting
   const { data: setting } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
   const isOpen = setting ? setting.value === "true" : true;
   if (!isOpen) { applyShopState(false); return; }
+
   const name = document.getElementById("custName").value.trim();
   if (!name) { document.getElementById("custName").focus(); return; }
   if (!Object.keys(cart).length) return;
@@ -669,12 +668,12 @@ async function submitOrder() {
 }
 
 // ===== ORDER TRACKER =====
-const STATUS_ICON = { pending:"clock", accepted:"chef-hat", ready:"package-check" };
+const STATUS_ICON  = { pending:"clock", accepted:"chef-hat", ready:"package-check" };
 const STATUS_LABEL = { pending:"รอการยืนยัน", accepted:"กำลังเตรียม", ready:"พร้อมรับแล้ว!" };
 const STATUS_STEPS = ["สั่งแล้ว","ยืนยัน","พร้อมรับ"];
 const STATUS_STEP_NUM = { pending:0, accepted:1, ready:2 };
 
-let lastKnownStatus = localStorage.getItem("myOrderStatus") || "";
+let lastKnownStatus   = localStorage.getItem("myOrderStatus") || "";
 let lastRenderedStatus = "";
 
 function renderOrderBar(order) {
@@ -739,6 +738,7 @@ function subscribeMyOrder() {
         checkMyOrderStatus();
       }
     }).subscribe();
+  // Also poll order status every 3 seconds as fallback
   setInterval(checkMyOrderStatus, 3000);
 }
 
@@ -774,15 +774,12 @@ function scrollToCart() { document.getElementById("cartBox").scrollIntoView({ be
 
 // ===== INIT =====
 renderMenu(); renderCart(); initTags();
-loadShopState();
 checkMyOrderStatus().then(() => { lastRenderedStatus = lastKnownStatus; subscribeMyOrder(); });
 requestNotifyPermission();
 lucide.createIcons();
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") { loadShopState(); checkMyOrderStatus(); }
+  if (document.visibilityState === "visible") { pollShopState(); checkMyOrderStatus(); }
 });
-// poll shop state ทุก 5 วิ เป็น fallback
-setInterval(loadShopState, 5000);
 </script>
 </body>
 </html>

@@ -38,7 +38,7 @@
 
     /* TOGGLE */
     .toggle-bar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; position: relative; }
-    .toggle-track { width: 56px; height: 30px; border-radius: 15px; background: #c62828; position: relative; transition: background 0.3s; border: 2px solid rgba(255,255,255,0.25); cursor: pointer; user-select: none; }
+    .toggle-track { width: 56px; height: 30px; border-radius: 15px; background: #c62828; position: relative; transition: background 0.3s; border: 2px solid rgba(255,255,255,0.25); cursor: pointer; user-select: none; -webkit-user-select: none; }
     .toggle-track.on { background: #43a047; }
     .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
     .toggle-track.on .toggle-thumb { left: 29px; }
@@ -165,13 +165,12 @@
 </main>
 
 <script>
-const SUPA_URL = "https://lwzjleknmnnqwdqqivtz.supabase.co";
-const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3empsZWtubW5ucXdkcXFpdnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTA0ODEsImV4cCI6MjEwNTcyNjQ4MX0.u-zr9TRWnP6DHrDMWUizh7_W6e9XF3otLQotBU-JUlk";
+const SUPA_URL  = "https://lwzjleknmnnqwdqqivtz.supabase.co";
+const SUPA_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3empsZWtubW5ucXdkcXFpdnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTA0ODEsImV4cCI6MjEwNTcyNjQ4MX0.u-zr9TRWnP6DHrDMWUizh7_W6e9XF3otLQotBU-JUlk";
+const ADMIN_PASS = "Earth54321";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ===== LOGIN =====
-const ADMIN_PASS = "Earth54321";
-
 function doLogin() {
   const val = document.getElementById("pwInput").value;
   if (val === ADMIN_PASS) {
@@ -194,61 +193,73 @@ function togglePw() {
   inp.type = inp.type === "password" ? "text" : "password";
 }
 
-function checkAuth() {
-  if (sessionStorage.getItem("adminAuth") === "1") {
-    document.getElementById("loginOverlay").classList.add("hidden");
-    loadOrders();
-    subscribeOrders();
-  }
-}
-
-// ===== SHOP TOGGLE =====
+// ===== SHOP STATE =====
+// isOpen tracks the actual current state (fetched from Supabase)
 let isOpen = true;
 
 async function loadShopState() {
   const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
   if (data) isOpen = data.value === "true";
-  applyShopState();
+  renderShopUI();
 }
 
-function applyShopState() {
+function renderShopUI() {
   const track = document.getElementById("toggleTrack");
   const label = document.getElementById("toggleLabel");
   const badge = document.getElementById("statusBadge");
-  const wasOpen = track.classList.contains("on");
-
   if (isOpen) {
-    track.classList.add("on"); label.textContent = "เปิดรับออเดอร์";
-    badge.textContent = "✦ เปิดรับออเดอร์"; badge.classList.remove("closed");
-    // ถ้าเพิ่งเปิดร้าน (จากปิด→เปิด) ให้ reset orders
-    if (!wasOpen) {
-      sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000").then(() => {
-        sb.rpc("reset_order_seq").catch(() => {});
-        loadOrders();
-      });
-    }
+    track.classList.add("on");
+    label.textContent = "เปิดรับออเดอร์";
+    badge.textContent = "✦ เปิดรับออเดอร์";
+    badge.classList.remove("closed");
   } else {
-    track.classList.remove("on"); label.textContent = "ปิดรับออเดอร์";
-    badge.textContent = "✦ ปิดรับออเดอร์"; badge.classList.add("closed");
+    track.classList.remove("on");
+    label.textContent = "ปิดรับออเดอร์";
+    badge.textContent = "✦ ปิดรับออเดอร์";
+    badge.classList.add("closed");
   }
-  // บันทึกลง Supabase
-  sb.from("settings").update({ value: String(isOpen) }).eq("key", "shopOpen").then();
 }
 
+// Called when hold-toggle fires — saves to Supabase and handles side effects
+async function toggleShopState() {
+  const newState = !isOpen;
+
+  // Save to Supabase first
+  await sb.from("settings").update({ value: String(newState) }).eq("key", "shopOpen");
+
+  if (newState === true) {
+    // Opening: delete all existing orders and reset sequence
+    await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await sb.rpc("reset_order_seq").catch(() => {});
+    loadOrders();
+  }
+
+  isOpen = newState;
+  renderShopUI();
+}
+
+// Hold-to-toggle (2s hold)
 (function() {
-  const track = document.getElementById("toggleTrack");
+  const track    = document.getElementById("toggleTrack");
   const progress = document.getElementById("holdProgress");
   let timer = null, holding = false;
+
   function start() {
-    if (holding) return; holding = true;
+    if (holding) return;
+    holding = true;
     progress.classList.add("active", "go");
-    timer = setTimeout(() => { isOpen = !isOpen; applyShopState(); stop(); }, 2000);
+    timer = setTimeout(() => {
+      stop();
+      toggleShopState();
+    }, 2000);
   }
   function stop() {
-    holding = false; clearTimeout(timer);
+    holding = false;
+    clearTimeout(timer);
     progress.classList.remove("go");
     setTimeout(() => progress.classList.remove("active"), 200);
   }
+
   track.addEventListener("mousedown",   start);
   track.addEventListener("touchstart",  start, { passive: true });
   track.addEventListener("mouseup",     stop);
@@ -258,8 +269,8 @@ function applyShopState() {
 })();
 
 // ===== ORDERS =====
-let allOrders = [];
-let currentFilter = "all";
+let allOrders      = [];
+let currentFilter  = "all";
 
 async function loadOrders() {
   const { data, error } = await sb.from("orders").select("*").order("timestamp", { ascending: false });
@@ -277,23 +288,19 @@ function subscribeOrders() {
 }
 
 async function acceptOrder(id) {
-  const { data, error } = await sb.from("orders").update({ status: "accepted" }).eq("id", id).select();
+  const { error } = await sb.from("orders").update({ status: "accepted" }).eq("id", id);
   if (error) console.error("acceptOrder error:", error);
-  else console.log("acceptOrder ok:", data);
   loadOrders();
 }
 
 async function readyOrder(id) {
-  const { data, error } = await sb.from("orders").update({ status: "ready" }).eq("id", id).select();
+  const { error } = await sb.from("orders").update({ status: "ready" }).eq("id", id);
   if (error) console.error("readyOrder error:", error);
-  else console.log("readyOrder ok:", data);
   loadOrders();
 }
 
 async function clearDone() {
   await sb.from("orders").delete().eq("status", "ready");
-  // reset order_seq sequence ให้เริ่ม 1 ใหม่
-  await sb.rpc("reset_order_seq").catch(() => {});
   loadOrders();
 }
 
@@ -316,14 +323,14 @@ function renderOrders() {
   const pending = all.filter(o => o.status === "pending");
   const revenue = all.reduce((s, o) => s + (o.total || 0), 0);
 
-  console.log("renderOrders: sample id =", all[0]?.id, "type =", typeof all[0]?.id);
-
   document.getElementById("statTotal").textContent   = all.length;
   document.getElementById("statPending").textContent = pending.length;
   document.getElementById("statRevenue").textContent = revenue;
 
   const pb = document.getElementById("pendingBadge");
-  pending.length > 0 ? (pb.textContent = pending.length, pb.classList.remove("hidden")) : pb.classList.add("hidden");
+  pending.length > 0
+    ? (pb.textContent = pending.length, pb.classList.remove("hidden"))
+    : pb.classList.add("hidden");
 
   const filtered = currentFilter === "all" ? all : all.filter(o => o.status === currentFilter);
   const list = document.getElementById("orderList");
@@ -339,7 +346,6 @@ function renderOrders() {
     const isPending  = o.status === "pending";
     const isAccepted = o.status === "accepted";
     const isReady    = o.status === "ready";
-    const shortId    = String(o.id).slice(-4).padStart(4, "0");
     return `
     <div class="order-card ${isReady?"ready":isAccepted?"accepted":""}" id="card-${o.id}">
       <div class="order-info">
@@ -368,13 +374,14 @@ function renderOrders() {
 }
 
 // ===== INIT =====
-applyShopState();
-checkAuth();
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
   loadShopState();
   loadOrders();
   subscribeOrders();
+} else {
+  // Still render the shop UI in its default state while login overlay is shown
+  renderShopUI();
 }
 </script>
 </body>
