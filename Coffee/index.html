@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zebros Coffee — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f2ede6;
+      color: #2d2d2d;
+      min-height: 100vh;
+    }
+
+    /* ===== LOGIN OVERLAY ===== */
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 9000;
+      background: linear-gradient(135deg, #1e3a20 0%, #2c4a2e 60%, #3a5c3c 100%);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    #loginOverlay.hidden { display: none; }
+    .login-card {
+      background: #fff; border-radius: 24px;
+      padding: 40px 32px 32px; max-width: 320px; width: 100%;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .login-card .lc-logo { font-size: 3rem; margin-bottom: 8px; }
+    .login-card h2 { font-size: 1.3rem; font-weight: 800; color: #1e3a20; margin-bottom: 4px; }
+    .login-card p  { font-size: 0.82rem; color: #aaa; margin-bottom: 24px; }
+    .login-input-wrap { position: relative; margin-bottom: 14px; }
+    .login-input-wrap input {
+      width: 100%; padding: 13px 44px 13px 16px;
+      border: 2px solid #e0e0e0; border-radius: 14px;
+      font-size: 1.1rem; font-family: inherit; letter-spacing: 6px;
+      background: #fafafa; text-align: center;
+      transition: border-color 0.2s;
+    }
+    .login-input-wrap input:focus { outline: none; border-color: #4a7c59; }
+    .login-input-wrap input.shake { animation: shake 0.35s ease; border-color: #e53935; }
+    @keyframes shake {
+      0%,100%{ transform: translateX(0); }
+      20%{ transform: translateX(-8px); }
+      40%{ transform: translateX(8px); }
+      60%{ transform: translateX(-6px); }
+      80%{ transform: translateX(6px); }
+    }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: #aaa; font-size: 1rem;
+      display: flex; align-items: center;
+    }
+    .btn-login {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #1e3a20, #2c4a2e);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 1rem; font-weight: 800; font-family: inherit;
+      cursor: pointer; transition: opacity 0.2s;
+      box-shadow: 0 4px 16px rgba(44,74,46,0.3);
+    }
+    .btn-login:hover { opacity: 0.9; }
+    .login-error {
+      color: #e53935; font-size: 0.8rem; margin-top: 8px;
+      min-height: 20px; font-weight: 700;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: linear-gradient(135deg, #1e3a20 0%, #2c4a2e 60%, #3a5c3c 100%);
+      color: #fff;
+      text-align: center;
+      padding: 22px 16px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    header .logo { font-size: 1.8rem; margin-bottom: 2px; position: relative; }
+    header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; position: relative; }
+    header .sub { font-size: 0.78rem; opacity: 0.65; margin-top: 4px; position: relative; }
+
+    /* ===== TOGGLE AREA ===== */
+    .toggle-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+      position: relative;
+    }
+    .toggle-track {
+      width: 56px;
+      height: 30px;
+      border-radius: 15px;
+      background: #c62828;
+      position: relative;
+      transition: background 0.3s;
+      border: 2px solid rgba(255,255,255,0.25);
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-track.on { background: #43a047; }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .toggle-track.on .toggle-thumb { left: 29px; }
+    .hold-progress {
+      position: absolute;
+      top: -7px; left: -7px;
+      width: 44px; height: 44px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .hold-progress.active { opacity: 1; }
+    .hold-progress circle {
+      fill: none; stroke: #fff; stroke-width: 3;
+      stroke-dasharray: 100; stroke-dashoffset: 100;
+      stroke-linecap: round;
+      transform: rotate(-90deg); transform-origin: 50% 50%;
+      transition: stroke-dashoffset 2s linear;
+    }
+    .hold-progress.go circle { stroke-dashoffset: 0; }
+    .toggle-label { font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.9); }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 20px;
+      padding: 3px 14px;
+      font-size: 0.75rem;
+      margin-top: 10px;
+      position: relative;
+    }
+    .header-badge.closed {
+      background: rgba(198,40,40,0.35);
+      border-color: rgba(255,100,100,0.4);
+      color: #ffcdd2;
+    }
+
+    /* ===== MAIN ===== */
+    main {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 16px 40px;
+    }
+
+    /* ===== SECTION TITLE ===== */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #1e3a20;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1.5px;
+      background: linear-gradient(to right, #4a7c59, transparent);
+    }
+    .section-title .count-badge {
+      background: #e53935;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      min-width: 22px;
+      text-align: center;
+    }
+    .section-title .count-badge.hidden { display: none; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      color: #bbb;
+      padding: 32px 0;
+      font-size: 0.88rem;
+    }
+    .empty-state .e-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+    /* ===== ORDER CARD ===== */
+    .order-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      animation: slideIn 0.25s ease;
+      border-left: 4px solid #f9a825;
+      transition: border-color 0.3s, opacity 0.3s;
+    }
+    .order-card.accepted { border-left-color: #43a047; opacity: 0.85; }
+    .order-card.ready    { border-left-color: #1565c0; opacity: 0.65; }
+    @keyframes slideIn {
+      from { transform: translateY(-10px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .order-info { flex: 1; min-width: 0; }
+    .order-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .order-id-tag {
+      background: #e8f5e9;
+      color: #2c4a2e;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 2px 10px;
+      border-radius: 10px;
+    }
+    .order-name {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #1e3a20;
+    }
+    .order-time {
+      font-size: 0.74rem;
+      color: #aaa;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .order-items {
+      font-size: 0.88rem;
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+    .order-items strong { color: #2c4a2e; }
+
+    .order-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .meta-tag {
+      background: #f5f5f5;
+      border-radius: 10px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+      color: #555;
+      font-weight: 600;
+    }
+    .meta-tag.note { background: #fffde7; color: #795548; }
+
+    .order-total {
+      font-weight: 800;
+      color: #2c4a2e;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+
+    /* status chip */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+    .status-chip.pending  { background: #fff8e1; color: #f9a825; }
+    .status-chip.accepted { background: #e8f5e9; color: #43a047; }
+    .status-chip.ready    { background: #e3f2fd; color: #1565c0; }
+
+    /* Action buttons */
+    .action-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-self: center;
+      flex-shrink: 0;
+    }
+    .btn-action {
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      border: 2px solid;
+    }
+    .btn-action:hover  { transform: scale(1.1); }
+    .btn-action:active { transform: scale(0.92); }
+    .btn-action.accept { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+    .btn-action.accept:hover { background: #c8e6c9; }
+    .btn-action.ready  { background: #e3f2fd; border-color: #90caf9; color: #1565c0; }
+    .btn-action.ready:hover  { background: #bbdefb; }
+    .btn-action.done   { background: #eee; border-color: #ccc; color: #aaa; cursor: default; pointer-events: none; font-size: 1rem; }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stat-card .s-num {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1e3a20;
+      line-height: 1;
+    }
+    .stat-card .s-label {
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* ===== FILTER TABS ===== */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .ftab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1.5px solid #ddd;
+      background: #fff;
+      font-size: 0.82rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #666;
+    }
+    .ftab.active { background: #2c4a2e; color: #fff; border-color: #2c4a2e; }
+
+    /* ===== CLEAR BTN ===== */
+    .btn-clear {
+      background: none;
+      border: 1.5px solid #ffcdd2;
+      color: #e53935;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: auto;
+      transition: background 0.15s;
+    }
+    .btn-clear:hover { background: #ffebee; }
+
+    .section-row {
+      display: flex;
+      align-items: center;
+      margin: 24px 0 12px;
+    }
+    .section-row .section-title { margin: 0; flex: 1; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div class="lc-logo">☕</div>
+    <h2>Zebros Coffee</h2>
+    <p>กรุณาใส่รหัสผ่านเพื่อเข้าหน้าแอดมิน</p>
+    <div class="login-input-wrap">
+      <input id="pwInput" type="password" placeholder="••••" maxlength="20"
+        onkeydown="if(event.key==='Enter') doLogin()" autofocus />
+      <button class="toggle-pw" onclick="togglePw()" tabindex="-1" type="button">👁</button>
+    </div>
+    <button class="btn-login" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">☕</div>
+  <h1>Zebros Coffee — แอดมิน</h1>
+  <p class="sub">หน้าจัดการออเดอร์</p>
+  <div class="header-badge" id="statusBadge">✦ เปิดรับออเดอร์</div>
+
+  <!-- Hold-to-toggle -->
+  <div class="toggle-bar">
+    <div class="toggle-track on" id="toggleTrack" title="กดค้าง 2 วิ เพื่อเปลี่ยนสถานะ">
+      <div class="toggle-thumb"></div>
+      <svg class="hold-progress" id="holdProgress" viewBox="0 0 44 44">
+        <circle cx="22" cy="22" r="17"/>
+      </svg>
+    </div>
+    <span class="toggle-label" id="toggleLabel">เปิดรับออเดอร์</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- STATS -->
+  <div class="section-title" style="margin-top:16px">📊 สรุปวันนี้</div>
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="s-num" id="statTotal">0</div>
+      <div class="s-label">ออเดอร์ทั้งหมด</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-num" id="statPending">0</div>
+      <div class="s-label">รอรับ</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-num" id="statRevenue">0</div>
+      <div class="s-label">รายได้ (฿)</div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="section-row">
+    <div class="section-title">🧾 ออเดอร์เข้ามา <span class="count-badge hidden" id="pendingBadge">0</span></div>
+    <button class="btn-clear" onclick="clearAccepted()">ล้างที่เสร็จแล้ว</button>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-tabs" style="margin-bottom:12px">
+    <button class="ftab active" data-filter="all"      onclick="setFilter('all',this)">ทั้งหมด</button>
+    <button class="ftab"        data-filter="pending"  onclick="setFilter('pending',this)">รอรับ</button>
+    <button class="ftab"        data-filter="accepted" onclick="setFilter('accepted',this)">กำลังเตรียม</button>
+    <button class="ftab"        data-filter="ready"    onclick="setFilter('ready',this)">พร้อมรับ</button>
+  </div>
+
+  <div id="orderList">
+    <div class="empty-state">
+      <span class="e-icon">📭</span>
+      ยังไม่มีออเดอร์เข้ามา
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ===== LOGIN =====
+const ADMIN_PASS = "123";
+
+function doLogin() {
+  const val = document.getElementById("pwInput").value;
+  if (val === ADMIN_PASS) {
+    sessionStorage.setItem("adminAuth", "1");
+    document.getElementById("loginOverlay").classList.add("hidden");
+  } else {
+    const inp = document.getElementById("pwInput");
+    inp.classList.remove("shake");
+    void inp.offsetWidth; // reflow
+    inp.classList.add("shake");
+    document.getElementById("loginError").textContent = "รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง";
+    inp.value = "";
+    inp.focus();
+  }
+}
+
+function togglePw() {
+  const inp = document.getElementById("pwInput");
+  inp.type = inp.type === "password" ? "text" : "password";
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem("adminAuth") !== "1") {
+    document.getElementById("loginOverlay").classList.remove("hidden");
+  } else {
+    document.getElementById("loginOverlay").classList.add("hidden");
+  }
+}
+
+// ===== STATE =====
+let isOpen = localStorage.getItem("shopOpen") !== "false";
+let currentFilter = "all";
+
+// ===== SHOP TOGGLE =====
+function applyShopState() {
+  const track = document.getElementById("toggleTrack");
+  const label = document.getElementById("toggleLabel");
+  const badge = document.getElementById("statusBadge");
+  if (isOpen) {
+    track.classList.add("on");
+    label.textContent = "เปิดรับออเดอร์";
+    badge.textContent = "✦ เปิดรับออเดอร์";
+    badge.classList.remove("closed");
+  } else {
+    track.classList.remove("on");
+    label.textContent = "ปิดรับออเดอร์";
+    badge.textContent = "✦ ปิดรับออเดอร์";
+    badge.classList.add("closed");
+  }
+  localStorage.setItem("shopOpen", isOpen);
+}
+
+// Hold-to-toggle 2s
+(function() {
+  const track    = document.getElementById("toggleTrack");
+  const progress = document.getElementById("holdProgress");
+  let timer = null, holding = false;
+
+  function start() {
+    if (holding) return;
+    holding = true;
+    progress.classList.add("active", "go");
+    timer = setTimeout(() => {
+      isOpen = !isOpen;
+      applyShopState();
+      stop();
+    }, 2000);
+  }
+  function stop() {
+    holding = false;
+    clearTimeout(timer);
+    progress.classList.remove("go");
+    setTimeout(() => progress.classList.remove("active"), 200);
+  }
+
+  track.addEventListener("mousedown",   start);
+  track.addEventListener("touchstart",  start, { passive: true });
+  track.addEventListener("mouseup",     stop);
+  track.addEventListener("mouseleave",  stop);
+  track.addEventListener("touchend",    stop);
+  track.addEventListener("touchcancel", stop);
+})();
+
+// ===== ORDERS =====
+function getOrders() {
+  try { return JSON.parse(localStorage.getItem("orders") || "[]"); }
+  catch { return []; }
+}
+
+function saveOrders(orders) {
+  localStorage.setItem("orders", JSON.stringify(orders));
+}
+
+function acceptOrder(id) {
+  const orders = getOrders();
+  const o = orders.find(x => x.id === id);
+  if (o && o.status === "pending") { o.status = "accepted"; saveOrders(orders); renderOrders(); }
+}
+
+function readyOrder(id) {
+  const orders = getOrders();
+  const o = orders.find(x => x.id === id);
+  if (o && o.status === "accepted") { o.status = "ready"; saveOrders(orders); renderOrders(); }
+}
+
+function clearAccepted() {
+  const orders = getOrders().filter(o => o.status === "pending");
+  saveOrders(orders);
+  renderOrders();
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  renderOrders();
+}
+
+function formatDateTime(ts) {
+  const d = new Date(ts);
+  const date = d.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+  const time = d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  return `${date} ${time}`;
+}
+
+function renderOrders() {
+  const all     = getOrders();
+  const pending = all.filter(o => o.status === "pending");
+  const revenue = all.reduce((s, o) => s + (o.total || 0), 0);
+
+  // stats
+  document.getElementById("statTotal").textContent   = all.length;
+  document.getElementById("statPending").textContent = pending.length;
+  document.getElementById("statRevenue").textContent = revenue;
+
+  // pending badge
+  const pb = document.getElementById("pendingBadge");
+  if (pending.length > 0) { pb.textContent = pending.length; pb.classList.remove("hidden"); }
+  else { pb.classList.add("hidden"); }
+
+  // filter
+  const filtered = currentFilter === "all" ? all
+    : currentFilter === "pending"  ? all.filter(o => o.status === "pending")
+    : currentFilter === "accepted" ? all.filter(o => o.status === "accepted")
+    : all.filter(o => o.status === "ready");
+
+  const list = document.getElementById("orderList");
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><span class="e-icon">📭</span>ไม่มีออเดอร์ในหมวดนี้</div>`;
+    return;
+  }
+
+  // newest first
+  const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
+
+  const statusLabel = { pending: "⏳ รอรับออเดอร์", accepted: "✅ รับแล้ว — กำลังเตรียม", ready: "🎉 พร้อมรับแล้ว" };
+
+  list.innerHTML = sorted.map(o => {
+    const isPending  = o.status === "pending";
+    const isAccepted = o.status === "accepted";
+    const isReady    = o.status === "ready";
+
+    const cardClass = isReady ? "ready" : isAccepted ? "accepted" : "";
+
+    return `
+    <div class="order-card ${cardClass}" id="card-${o.id}">
+      <div class="order-info">
+        <div class="order-header">
+          <span class="order-id-tag">#${o.id}</span>
+          <span class="order-name">${o.name}</span>
+          ${o.phone ? `<span style="font-size:0.78rem;color:#aaa">📞 ${o.phone}</span>` : ""}
+          <span class="order-time">${formatDateTime(o.timestamp)}</span>
+        </div>
+        <div class="order-items">
+          ${o.items.map(i => `<strong>${i.name}</strong> ×${i.qty} &nbsp;`).join("")}
+        </div>
+        <div class="order-meta">
+          <span class="meta-tag"> ${o.sweet}</span>
+          <span class="meta-tag"> ${o.temp}</span>
+          ${o.note ? `<span class="meta-tag note">📌 ${o.note}</span>` : ""}
+        </div>
+        <div class="order-total">รวม ${o.total} ฿</div>
+        <div>
+          <span class="status-chip ${o.status}">
+            ${statusLabel[o.status] || ""}
+          </span>
+        </div>
+      </div>
+      <div class="action-btns">
+        ${isPending  ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')" title="รับออเดอร์">✓</button>` : ""}
+        ${isAccepted ? `<button class="btn-action ready"  onclick="readyOrder('${o.id}')"  title="สินค้าพร้อมแล้ว">🛍️</button>` : ""}
+        ${isReady    ? `<button class="btn-action done" title="เสร็จแล้ว">✓</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ===== REAL-TIME: listen localStorage changes from menu.html =====
+window.addEventListener("storage", (e) => {
+  if (e.key === "orders") checkAndRender();
+  if (e.key === "shopOpen") {
+    isOpen = localStorage.getItem("shopOpen") !== "false";
+    applyShopState();
+  }
+});
+
+// ===== SMART POLL: only re-render if data actually changed =====
+let lastOrdersSnapshot = "";
+
+function checkAndRender() {
+  const current = localStorage.getItem("orders") || "[]";
+  if (current !== lastOrdersSnapshot) {
+    lastOrdersSnapshot = current;
+    renderOrders();
+  }
+}
+
+// ===== INIT =====
+checkAuth();
+applyShopState();
+renderOrders();
+lastOrdersSnapshot = localStorage.getItem("orders") || "[]";
+setInterval(checkAndRender, 3000);
+</script>
+</body>
+</html>
