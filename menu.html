@@ -344,12 +344,12 @@
       z-index: 99;
     }
     .fab {
-      width: 52px; height: 52px; border-radius: 16px;
-      background: var(--accent); border: none; cursor: pointer;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--surface); border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 20px rgba(0,0,0,0.2);
       transition: transform 0.2s;
-      overflow: hidden;
+      overflow: hidden; padding: 0;
     }
     .fab:active { transform: scale(0.93); }
     .fab-badge {
@@ -484,23 +484,7 @@
 <!-- FAB -->
 <div class="fab-wrap">
   <button class="fab" onclick="scrollToCart()">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
-      <ellipse cx="28" cy="38" rx="13" ry="17" fill="#c8922a" transform="rotate(-20,28,38)"/>
-      <ellipse cx="72" cy="38" rx="13" ry="17" fill="#c8922a" transform="rotate(20,72,38)"/>
-      <ellipse cx="28" cy="38" rx="7" ry="11" fill="#e8b96a" transform="rotate(-20,28,38)"/>
-      <ellipse cx="72" cy="38" rx="7" ry="11" fill="#e8b96a" transform="rotate(20,72,38)"/>
-      <ellipse cx="50" cy="55" rx="30" ry="27" fill="#c8922a"/>
-      <ellipse cx="50" cy="62" rx="19" ry="15" fill="#f0d090"/>
-      <circle cx="40" cy="50" r="5" fill="#fff"/><circle cx="60" cy="50" r="5" fill="#fff"/>
-      <circle cx="41" cy="51" r="3" fill="#2d1a00"/><circle cx="61" cy="51" r="3" fill="#2d1a00"/>
-      <circle cx="42" cy="50" r="1" fill="#fff"/><circle cx="62" cy="50" r="1" fill="#fff"/>
-      <ellipse cx="50" cy="60" rx="5" ry="3.5" fill="#3d2000"/>
-      <path d="M44 64 Q50 70 56 64" stroke="#3d2000" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="50" cy="69" rx="5" ry="4" fill="#e8607a"/>
-      <line x1="50" y1="66" x2="50" y2="73" stroke="#d04060" stroke-width="1"/>
-      <ellipse cx="35" cy="62" rx="6" ry="4" fill="#ffaaaa" opacity="0.5"/>
-      <ellipse cx="65" cy="62" rx="6" ry="4" fill="#ffaaaa" opacity="0.5"/>
-    </svg>
+    <img src="images/corgi.png" alt="corgi" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
   </button>
   <span class="fab-badge hidden" id="fabBadge">0</span>
 </div>
