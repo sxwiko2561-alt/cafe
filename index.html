@@ -215,9 +215,18 @@ function applyShopState() {
   const track = document.getElementById("toggleTrack");
   const label = document.getElementById("toggleLabel");
   const badge = document.getElementById("statusBadge");
+  const wasOpen = track.classList.contains("on");
+
   if (isOpen) {
     track.classList.add("on"); label.textContent = "เปิดรับออเดอร์";
     badge.textContent = "✦ เปิดรับออเดอร์"; badge.classList.remove("closed");
+    // ถ้าเพิ่งเปิดร้าน (จากปิด→เปิด) ให้ reset orders
+    if (!wasOpen) {
+      sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000").then(() => {
+        sb.rpc("reset_order_seq").catch(() => {});
+        loadOrders();
+      });
+    }
   } else {
     track.classList.remove("on"); label.textContent = "ปิดรับออเดอร์";
     badge.textContent = "✦ ปิดรับออเดอร์"; badge.classList.add("closed");
