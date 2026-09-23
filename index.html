@@ -260,12 +260,16 @@ function subscribeOrders() {
 }
 
 async function acceptOrder(id) {
-  await sb.from("orders").update({ status: "accepted" }).eq("id", id);
+  console.log("acceptOrder called with id:", id);
+  const { data, error } = await sb.from("orders").update({ status: "accepted" }).eq("id", id).select();
+  console.log("result:", data, error);
   loadOrders();
 }
 
 async function readyOrder(id) {
-  await sb.from("orders").update({ status: "ready" }).eq("id", id);
+  console.log("readyOrder called with id:", id);
+  const { data, error } = await sb.from("orders").update({ status: "ready" }).eq("id", id).select();
+  console.log("result:", data, error);
   loadOrders();
 }
 
