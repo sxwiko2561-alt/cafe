@@ -536,8 +536,12 @@ function applyShopState(isOpen) {
 
 // realtime subscribe shop state
 sb.channel("shop-state")
-  .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings", filter: "key=eq.shopOpen" },
-    payload => { applyShopState(payload.new.value === "true"); })
+  .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings" },
+    payload => {
+      if (payload.new.key === "shopOpen") {
+        applyShopState(payload.new.value === "true");
+      }
+    })
   .subscribe();
 
 // ===== MENU =====
@@ -777,6 +781,8 @@ lucide.createIcons();
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") { loadShopState(); checkMyOrderStatus(); }
 });
+// poll shop state ทุก 5 วิ เป็น fallback
+setInterval(loadShopState, 5000);
 </script>
 </body>
 </html>
