@@ -548,9 +548,19 @@ renderMenu();
 renderCart();
 initTags();
 applyShopState();
-checkMyOrderStatus().then(subscribeMyOrder);
+checkMyOrderStatus().then(() => {
+  lastRenderedStatus = lastKnownStatus;
+  subscribeMyOrder();
+});
 requestNotifyPermission();
 lucide.createIcons();
+
+// fetch ทันทีเมื่อกลับมาที่แท็บ (แก้ปัญหา mobile background)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    checkMyOrderStatus();
+  }
+});
 </script>
 </body>
 </html>
