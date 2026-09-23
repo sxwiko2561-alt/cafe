@@ -334,8 +334,8 @@ function renderOrders() {
         <div><span class="status-chip ${o.status}">${statusLabel[o.status]||""}</span></div>
       </div>
       <div class="action-btns">
-        ${isPending  ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">✓</button>` : ""}
-        ${isAccepted ? `<button class="btn-action ready"  onclick="readyOrder('${o.id}')">🛍️</button>` : ""}
+        ${isPending  ? `<button class="btn-action accept" data-id="${o.id}" onclick="acceptOrder(this.dataset.id)">✓</button>` : ""}
+        ${isAccepted ? `<button class="btn-action ready"  data-id="${o.id}" onclick="readyOrder(this.dataset.id)">🛍️</button>` : ""}
         ${isReady    ? `<button class="btn-action done">✓</button>` : ""}
       </div>
     </div>`;
