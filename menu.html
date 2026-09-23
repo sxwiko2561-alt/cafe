@@ -4,222 +4,487 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zebros Coffee</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Sarabun', sans-serif; background: #f2ede6; color: #2d2d2d; min-height: 100vh; }
-    .ic { display: inline-flex; align-items: center; justify-content: center; }
-    .ic svg { width: 1em; height: 1em; stroke-width: 2.2; }
+    :root {
+      --bg: #f9f8f6;
+      --surface: #ffffff;
+      --border: #ebebeb;
+      --text: #1a1a1a;
+      --text-2: #6b6b6b;
+      --text-3: #a8a8a8;
+      --accent: #1a1a1a;
+      --accent-light: #f0f0f0;
+      --green: #2d6a4f;
+      --green-light: #f0f7f4;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Sarabun', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+    }
+
+    /* ===== HEADER ===== */
     header {
-      background: linear-gradient(135deg, #1e3a20 0%, #2c4a2e 60%, #3a5c3c 100%);
-      color: #fff; text-align: center; padding: 28px 16px 24px;
-      position: relative; overflow: hidden;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    header::before {
-      content: ''; position: absolute; inset: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    .header-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .header-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 6px; position: relative; }
-    header h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: 1px; position: relative; }
-    header p  { font-size: 0.85rem; opacity: 0.7; margin-top: 6px; position: relative; }
-    .header-badge {
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2; }
+    .brand-name { font-size: 1rem; font-weight: 600; letter-spacing: -0.3px; }
+    .brand-sub  { font-size: 0.72rem; color: var(--text-3); margin-top: 1px; }
+
+    .status-pill {
       display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 20px; padding: 3px 14px; font-size: 0.75rem; margin-top: 10px; position: relative;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 500;
+      background: var(--green-light); color: var(--green);
+      border: 1px solid #c8e6d8;
     }
-    .header-badge.closed { background: rgba(198,40,40,0.3); border-color: rgba(255,100,100,0.4); color: #ffcdd2; }
-
-    main { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
-
-    .section-title {
-      font-size: 1rem; font-weight: 800; color: #1e3a20; margin: 24px 0 12px;
-      display: flex; align-items: center; gap: 8px;
+    .status-pill .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
     }
-    .section-title svg { width: 18px; height: 18px; stroke: #2c4a2e; flex-shrink: 0; }
-    .section-title::after { content: ''; flex: 1; height: 1.5px; background: linear-gradient(to right, #4a7c59, transparent); border-radius: 2px; }
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .status-pill.closed { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .status-pill.closed .dot { background: #dc2626; animation: none; }
 
-    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .menu-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-    .menu-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(44,74,46,0.15); }
-    .menu-card:active { transform: scale(0.97); }
-    .menu-card .img-wrap { width: 100%; aspect-ratio: 1; background: #e8f0e9; overflow: hidden; position: relative; }
-    .menu-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; transition: transform 0.35s; }
-    .menu-card:hover .img-wrap img { transform: scale(1.08); }
-    .menu-card .img-wrap .icon-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-    .menu-card .img-wrap .icon-fallback svg { width: 56px; height: 56px; stroke: #4a7c59; stroke-width: 1.5; }
-    .price-badge { position: absolute; bottom: 10px; right: 10px; background: #1e3a20; color: #fff; font-weight: 800; font-size: 0.85rem; padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-    .menu-card .info { padding: 10px 12px 12px; display: flex; align-items: center; justify-content: space-between; }
-    .menu-card .name { font-size: 0.88rem; font-weight: 700; line-height: 1.3; flex: 1; }
-    .btn-add { background: #2c4a2e; color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; flex-shrink: 0; }
-    .btn-add svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; }
-    .btn-add:hover { background: #4a7c59; }
-    .btn-add:active { transform: scale(0.9); }
-
-    .cart-section { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
-    .cart-empty { text-align: center; color: #bbb; font-size: 0.85rem; padding: 20px 0; }
-    .cart-empty .empty-icon { display: flex; justify-content: center; margin-bottom: 8px; }
-    .cart-empty .empty-icon svg { width: 36px; height: 36px; stroke: #ddd; stroke-width: 1.5; }
-    .cart-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
-    .cart-item:last-of-type { border-bottom: none; }
-    .cart-thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; object-position: center 20%; background: #e8f0e9; flex-shrink: 0; }
-    .cart-thumb-icon { width: 44px; height: 44px; border-radius: 10px; background: #e8f0e9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cart-thumb-icon svg { width: 22px; height: 22px; stroke: #4a7c59; stroke-width: 1.8; }
-    .cart-item .item-name { flex: 1; font-size: 0.88rem; font-weight: 600; }
-    .cart-item .qty-ctrl { display: flex; align-items: center; gap: 8px; }
-    .qty-btn { background: #f0f5f0; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #2c4a2e; transition: background 0.15s; font-size: 1rem; }
-    .qty-btn:hover { background: #c8e6c9; }
-    .qty-num { min-width: 20px; text-align: center; font-weight: 700; font-size: 0.95rem; }
-    .item-subtotal { font-size: 0.9rem; font-weight: 700; color: #2c4a2e; min-width: 52px; text-align: right; }
-    .cart-total { display: flex; justify-content: space-between; align-items: center; font-size: 1rem; font-weight: 800; margin-top: 14px; padding-top: 12px; border-top: 2px dashed #d0e8d0; color: #1e3a20; }
-    .cart-total .total-label { display: flex; align-items: center; gap: 6px; }
-    .cart-total .total-label svg { width: 16px; height: 16px; stroke: #2c4a2e; }
-    .cart-total .total-amount { font-size: 1.3rem; color: #2c4a2e; }
-
-    .order-form { margin-top: 0; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 5px; margin-bottom: 5px; color: #444; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-group label svg { width: 14px; height: 14px; stroke: #666; flex-shrink: 0; }
-    .form-group input, .form-group textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #e0e0e0; border-radius: 12px; font-size: 0.92rem; font-family: inherit; background: #fafafa; transition: border-color 0.2s, background 0.2s; }
-    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #4a7c59; background: #fff; }
-    textarea { resize: vertical; min-height: 64px; }
-
-    .option-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-    .tag-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: #fff; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: all 0.15s; font-weight: 600; color: #444; }
-    .tag-btn svg { width: 13px; height: 13px; stroke: currentColor; flex-shrink: 0; }
-    .tag-btn:hover { border-color: #4a7c59; color: #2c4a2e; }
-    .tag-btn.selected { background: #2c4a2e; color: #fff; border-color: #2c4a2e; }
-
-    .btn-order { width: 100%; padding: 15px; background: linear-gradient(135deg, #1e3a20, #2c4a2e); color: #fff; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 800; font-family: inherit; cursor: pointer; margin-top: 6px; transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.5px; box-shadow: 0 4px 16px rgba(44,74,46,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-order svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2.2; }
-    .btn-order:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-order:active { transform: scale(0.98); }
-    .btn-order:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
-
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.show { display: flex; }
-    .modal { background: #fff; border-radius: 24px; padding: 36px 28px 28px; max-width: 340px; width: 100%; text-align: center; animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes popIn { from { transform: scale(0.75); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal .modal-icon { display: flex; justify-content: center; margin-bottom: 14px; }
-    .modal .modal-icon svg { width: 52px; height: 52px; stroke: #2c4a2e; stroke-width: 1.8; }
-    .modal h2 { font-size: 1.3rem; font-weight: 800; color: #1e3a20; margin-bottom: 6px; }
-    .modal .order-id { display: inline-block; background: #e8f5e9; color: #2c4a2e; font-weight: 800; padding: 5px 18px; border-radius: 20px; margin: 10px 0 8px; font-size: 1.1rem; }
-    .modal p { font-size: 0.88rem; color: #666; line-height: 1.6; }
-    .modal .wait-note { display: flex; align-items: center; justify-content: center; gap: 6px; background: #fffde7; border-radius: 10px; padding: 8px 12px; margin-top: 12px; font-size: 0.82rem; color: #795548; }
-    .modal .wait-note svg { width: 14px; height: 14px; stroke: #795548; flex-shrink: 0; }
-    .btn-close-modal { margin-top: 18px; padding: 12px 32px; background: linear-gradient(135deg, #1e3a20, #2c4a2e); color: #fff; border: none; border-radius: 12px; font-size: 0.95rem; font-family: inherit; font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-close-modal svg { width: 16px; height: 16px; stroke: #fff; }
-    .btn-close-modal:hover { opacity: 0.9; }
-
-    .cart-fab-wrap { position: fixed; bottom: 24px; right: 20px; z-index: 9999; width: 64px; height: 64px; isolation: isolate; }
-    .cart-fab { background: #fff; width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; overflow: hidden; }
-    .cart-fab:hover { transform: scale(1.1) rotate(-5deg); }
-    .cart-fab-wrap .badge { position: absolute; top: -4px; right: -4px; background: #e53935; color: #fff; font-size: 0.65rem; font-weight: 800; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 5px; border: 2px solid #f2ede6; z-index: 10000; pointer-events: none; }
-    .cart-fab-wrap .badge.hidden { display: none; }
-
-    .divider { height: 1px; background: #e8e0d8; margin: 4px 0 12px; border-radius: 1px; }
-
-    .closed-overlay { display: none; position: fixed; inset: 0; background: rgba(15,25,16,0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
-    .closed-overlay.show { display: flex; }
-    .closed-card { background: #fff; border-radius: 28px; padding: 40px 28px 32px; max-width: 320px; width: 100%; text-align: center; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-    .closed-card .closed-icon { display: flex; justify-content: center; margin-bottom: 14px; }
-    .closed-card .closed-icon svg { width: 56px; height: 56px; stroke: #b71c1c; stroke-width: 1.6; }
-    .closed-card h2 { font-size: 1.5rem; font-weight: 800; color: #b71c1c; margin-bottom: 8px; }
-    .closed-card p  { font-size: 0.9rem; color: #666; line-height: 1.7; }
-
+    /* ===== MY ORDER BAR ===== */
     #myOrderBar { display: none; }
-    .myorder-bar { max-width: 480px; margin: 12px auto 0; padding: 14px 16px; border-radius: 14px; font-size: 0.88rem; font-weight: 700; text-align: center; animation: popIn 0.3s ease; }
-    .myorder-bar.pending  { background: #fff8e1; color: #f57f17; border: 1.5px solid #ffe082; }
-    .myorder-bar.accepted { background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; }
-    .myorder-bar.ready    { background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; }
-    .myorder-bar .bar-icon svg { width: 36px; height: 36px; stroke: currentColor; stroke-width: 1.8; margin-bottom: 6px; }
+    .order-status-card {
+      max-width: 480px; margin: 12px auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-8px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .osc-top {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .osc-icon-wrap {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .osc-icon-wrap.pending  { background: #fffbeb; }
+    .osc-icon-wrap.accepted { background: #f0fdf4; }
+    .osc-icon-wrap.ready    { background: #eff6ff; }
+    .osc-icon-wrap svg { width: 20px; height: 20px; stroke-width: 2; }
+    .osc-icon-wrap.pending  svg { stroke: #d97706; }
+    .osc-icon-wrap.accepted svg { stroke: #16a34a; }
+    .osc-icon-wrap.ready    svg { stroke: #2563eb; }
+    .osc-title { font-size: 0.92rem; font-weight: 600; }
+    .osc-sub   { font-size: 0.75rem; color: var(--text-2); margin-top: 2px; }
+
+    /* step progress */
+    .step-bar {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 14px;
+    }
+    .step-item {
+      display: flex; flex-direction: column; align-items: center;
+      flex: 1; position: relative;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border); position: relative; z-index: 1;
+    }
+    .step-dot.active   { background: var(--accent); }
+    .step-dot.done     { background: var(--accent); }
+    .step-label {
+      font-size: 0.65rem; color: var(--text-3); margin-top: 5px;
+      white-space: nowrap;
+    }
+    .step-label.active { color: var(--text); font-weight: 600; }
+    .step-line {
+      flex: 1; height: 1px; background: var(--border);
+      margin-top: -12px;
+    }
+    .step-line.done { background: var(--accent); }
+
+    .btn-new-order {
+      width: 100%; padding: 11px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-size: 0.85rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; letter-spacing: 0.2px;
+    }
+
+    /* ===== CLOSED OVERLAY ===== */
+    .closed-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      z-index: 200; align-items: center; justify-content: center; padding: 24px;
+    }
+    .closed-overlay.show { display: flex; }
+    .closed-card {
+      background: var(--surface); border-radius: 24px;
+      padding: 40px 28px 32px; max-width: 300px; width: 100%;
+      text-align: center; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .closed-card .c-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: #fef2f2; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .closed-card .c-icon svg { width: 28px; height: 28px; stroke: #dc2626; stroke-width: 1.8; }
+    .closed-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+    .closed-card p  { font-size: 0.82rem; color: var(--text-2); line-height: 1.6; }
+
+    /* ===== MAIN ===== */
+    main { max-width: 480px; margin: 0 auto; padding: 20px 16px 120px; }
+
+    .section-label {
+      font-size: 0.72rem; font-weight: 600; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 28px 0 12px;
+    }
+
+    /* ===== MENU GRID ===== */
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .menu-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden; cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      -webkit-user-select: none;
+    }
+    .menu-card:active { transform: scale(0.97); }
+    .menu-card:hover  { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+
+    .menu-card .img-wrap {
+      width: 100%; aspect-ratio: 1;
+      background: #f5f5f5; overflow: hidden; position: relative;
+    }
+    .menu-card .img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 20%;
+      transition: transform 0.35s;
+    }
+    .menu-card:hover .img-wrap img { transform: scale(1.05); }
+    .icon-fallback {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #f5f5f5;
+    }
+    .icon-fallback svg { width: 40px; height: 40px; stroke: #ccc; stroke-width: 1.5; }
+
+    .price-chip {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(4px);
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 600; color: var(--text);
+    }
+
+    .menu-card .card-body {
+      padding: 10px 12px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-name { font-size: 0.82rem; font-weight: 500; line-height: 1.3; flex: 1; }
+
+    .btn-add {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--accent); color: #fff;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: opacity 0.15s;
+    }
+    .btn-add svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 2.5; }
+    .btn-add:active { opacity: 0.7; }
+
+    /* ===== CART ===== */
+    .cart-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .cart-empty-state {
+      padding: 32px 16px; text-align: center;
+      color: var(--text-3); font-size: 0.82rem;
+    }
+    .cart-empty-state svg { width: 32px; height: 32px; stroke: #ddd; stroke-width: 1.5; display: block; margin: 0 auto 8px; }
+
+    .cart-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .cart-row:last-of-type { border-bottom: none; }
+    .cart-thumb {
+      width: 40px; height: 40px; border-radius: 10px;
+      object-fit: cover; object-position: center 20%;
+      background: #f5f5f5; flex-shrink: 0;
+    }
+    .cart-thumb-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #f5f5f5; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cart-thumb-icon svg { width: 18px; height: 18px; stroke: #ccc; }
+    .cart-item-name { flex: 1; font-size: 0.82rem; font-weight: 500; }
+    .qty-ctrl { display: flex; align-items: center; gap: 10px; }
+    .qty-btn {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--accent-light); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; color: var(--text); font-size: 1rem;
+    }
+    .qty-btn:active { opacity: 0.6; }
+    .qty-num { font-size: 0.85rem; font-weight: 600; min-width: 16px; text-align: center; }
+    .item-price { font-size: 0.82rem; font-weight: 600; color: var(--text); min-width: 48px; text-align: right; }
+
+    .cart-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      font-weight: 600; font-size: 0.88rem;
+    }
+    .cart-total-row .total-val { font-size: 1rem; }
+
+    /* ===== FORM ===== */
+    .form-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .form-field { margin-bottom: 14px; }
+    .form-field label {
+      display: block; font-size: 0.72rem; font-weight: 600;
+      color: var(--text-2); margin-bottom: 6px; letter-spacing: 0.3px;
+    }
+    .form-field input, .form-field textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem; font-family: inherit;
+      background: var(--bg); color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .form-field input:focus, .form-field textarea:focus {
+      outline: none; border-color: var(--text); background: #fff;
+    }
+    textarea { resize: none; height: 72px; }
+
+    /* option tags */
+    .tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      padding: 6px 14px; border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.78rem; font-family: inherit; cursor: pointer;
+      transition: all 0.15s; color: var(--text-2); font-weight: 500;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .tag svg { width: 12px; height: 12px; stroke: currentColor; }
+    .tag:hover  { border-color: var(--text); color: var(--text); }
+    .tag.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ===== SUBMIT ===== */
+    .btn-submit {
+      width: 100%; padding: 14px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-size: 0.92rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; letter-spacing: 0.3px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.15s;
+      margin-top: 4px;
+    }
+    .btn-submit svg { width: 16px; height: 16px; stroke: #fff; stroke-width: 2.2; }
+    .btn-submit:active  { opacity: 0.8; }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ===== CART FAB ===== */
+    .fab-wrap {
+      position: fixed; bottom: 24px; right: 16px;
+      z-index: 99;
+    }
+    .fab {
+      width: 52px; height: 52px; border-radius: 16px;
+      background: var(--accent); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+      overflow: hidden;
+    }
+    .fab:active { transform: scale(0.93); }
+    .fab-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: #ef4444; color: #fff;
+      font-size: 0.6rem; font-weight: 700;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; border: 2px solid var(--bg);
+    }
+    .fab-badge.hidden { display: none; }
+
+    /* ===== SUCCESS MODAL ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 100;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 24px;
+      padding: 32px 24px 24px; max-width: 320px; width: 100%;
+      text-align: center; animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-icon-wrap {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--green-light); margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-icon-wrap svg { width: 28px; height: 28px; stroke: var(--green); stroke-width: 2; }
+    .modal h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .order-num {
+      display: inline-block; background: var(--accent-light);
+      padding: 4px 16px; border-radius: 20px;
+      font-size: 0.92rem; font-weight: 600;
+      margin: 8px 0;
+    }
+    .modal p { font-size: 0.8rem; color: var(--text-2); line-height: 1.6; }
+    .btn-modal-close {
+      width: 100%; margin-top: 16px; padding: 12px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-size: 0.88rem; font-weight: 600; font-family: inherit;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
-  <div class="header-logo">
-    <i data-lucide="coffee" style="width:2.2rem;height:2.2rem;stroke:#fff;stroke-width:1.8"></i>
-  </div>
-  <h1>Zebros Coffee</h1>
-  <p>สั่งง่าย รับที่ร้าน — ไม่ต้องรอคิว</p>
-  <div class="header-badge" id="statusBadge">
-    <i data-lucide="circle-check-big"></i> เปิดรับออเดอร์
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon"><i data-lucide="coffee"></i></div>
+      <div>
+        <div class="brand-name">Zebros Coffee</div>
+        <div class="brand-sub">สั่งง่าย รับที่ร้าน</div>
+      </div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="dot"></span> เปิดรับออเดอร์
+    </div>
   </div>
 </header>
 
-<div id="myOrderBar"></div>
+<!-- MY ORDER STATUS -->
+<div id="myOrderBar" style="padding:0 16px"></div>
 
+<!-- CLOSED OVERLAY -->
 <div class="closed-overlay" id="closedOverlay">
   <div class="closed-card">
-    <div class="closed-icon"><i data-lucide="store-x"></i></div>
+    <div class="c-icon"><i data-lucide="moon"></i></div>
     <h2>ปิดรับออเดอร์แล้ว</h2>
     <p>ขณะนี้ทางร้านยังไม่เปิดรับออเดอร์<br>กรุณากลับมาใหม่ในภายหลัง</p>
   </div>
 </div>
 
 <main>
-  <div class="section-title"><i data-lucide="newspaper"></i> เมนูวันนี้</div>
+  <!-- MENU -->
+  <div class="section-label">เมนูวันนี้</div>
   <div class="menu-grid" id="menuGrid"></div>
 
-  <div class="section-title"><i data-lucide="shopping-cart"></i> ตะกร้า</div>
-  <div class="cart-section">
-    <div id="cartList">
-      <div class="cart-empty">
-        <div class="empty-icon"><i data-lucide="package-open"></i></div>
-        ยังไม่มีรายการ — เลือกเมนูด้านบนได้เลย
-      </div>
-    </div>
-    <div id="cartTotal" style="display:none" class="cart-total">
-      <span class="total-label"><i data-lucide="receipt"></i> รวมทั้งหมด</span>
-      <span class="total-amount" id="totalPrice">0 ฿</span>
+  <!-- CART -->
+  <div class="section-label">ตะกร้า</div>
+  <div class="cart-box" id="cartBox">
+    <div class="cart-empty-state">
+      <i data-lucide="shopping-bag"></i>
+      ยังไม่มีรายการ
     </div>
   </div>
 
-  <div class="section-title"><i data-lucide="clipboard-list"></i> ข้อมูลผู้สั่ง</div>
-  <div class="cart-section order-form">
-    <div class="form-group">
-      <label><i data-lucide="user"></i> ชื่อผู้สั่ง *</label>
-      <input id="custName" type="text" placeholder="เช่น น้องมิน" />
+  <!-- FORM -->
+  <div class="section-label">ข้อมูลผู้สั่ง</div>
+  <div class="form-box">
+    <div class="form-field">
+      <label>ชื่อ *</label>
+      <input id="custName" type="text" placeholder="ชื่อของคุณ" />
     </div>
-    <div class="form-group">
-      <label><i data-lucide="phone"></i> เบอร์โทร (ถ้ามี)</label>
+    <div class="form-field">
+      <label>เบอร์โทร</label>
       <input id="custPhone" type="tel" placeholder="08x-xxx-xxxx" />
     </div>
     <div class="divider"></div>
-    <div class="form-group">
-      <label><i data-lucide="candy"></i> ความหวาน</label>
-      <div class="option-tags" id="sweetTags">
-        <button class="tag-btn selected" data-val="ปกติ">ปกติ</button>
-        <button class="tag-btn" data-val="หวานน้อย">หวานน้อย</button>
-        <button class="tag-btn" data-val="หวานน้อยมาก">หวานน้อยมาก</button>
-        <button class="tag-btn" data-val="ไม่หวาน">ไม่หวาน</button>
+    <div class="form-field">
+      <label>ความหวาน</label>
+      <div class="tag-group" id="sweetTags">
+        <button class="tag active" data-val="ปกติ">ปกติ</button>
+        <button class="tag" data-val="หวานน้อย">หวานน้อย</button>
+        <button class="tag" data-val="หวานน้อยมาก">หวานน้อยมาก</button>
+        <button class="tag" data-val="ไม่หวาน">ไม่หวาน</button>
       </div>
     </div>
-    <div class="form-group">
-      <label><i data-lucide="thermometer"></i> อุณหภูมิ</label>
-      <div class="option-tags" id="tempTags">
-        <button class="tag-btn selected" data-val="เย็น"><i data-lucide="snowflake"></i> เย็น</button>
-        <button class="tag-btn" data-val="ร้อน"><i data-lucide="flame"></i> ร้อน</button>
-        <button class="tag-btn" data-val="ปั่น"><i data-lucide="wind"></i> ปั่น</button>
+    <div class="form-field">
+      <label>อุณหภูมิ</label>
+      <div class="tag-group" id="tempTags">
+        <button class="tag active" data-val="เย็น"><i data-lucide="snowflake"></i>เย็น</button>
+        <button class="tag" data-val="ร้อน"><i data-lucide="flame"></i>ร้อน</button>
+        <button class="tag" data-val="ปั่น"><i data-lucide="wind"></i>ปั่น</button>
       </div>
     </div>
     <div class="divider"></div>
-    <div class="form-group">
-      <label><i data-lucide="pencil-line"></i> หมายเหตุ</label>
-      <textarea id="custNote" placeholder="เช่น ขอนมข้น, ไม่ใส่น้ำแข็ง, เพิ่มหวานนิดนึง ..."></textarea>
+    <div class="form-field">
+      <label>หมายเหตุ</label>
+      <textarea id="custNote" placeholder="เช่น ไม่ใส่น้ำแข็ง, นมข้น..."></textarea>
     </div>
-    <button class="btn-order" id="btnOrder" onclick="submitOrder()">
-      <i data-lucide="send"></i> สั่งเลย
+    <button class="btn-submit" id="btnOrder" onclick="submitOrder()">
+      <i data-lucide="arrow-right"></i> สั่งเลย
     </button>
   </div>
 </main>
 
-<div class="cart-fab-wrap">
-  <button class="cart-fab" onclick="scrollToCart()">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="42" height="42">
+<!-- FAB -->
+<div class="fab-wrap">
+  <button class="fab" onclick="scrollToCart()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
       <ellipse cx="28" cy="38" rx="13" ry="17" fill="#c8922a" transform="rotate(-20,28,38)"/>
       <ellipse cx="72" cy="38" rx="13" ry="17" fill="#c8922a" transform="rotate(20,72,38)"/>
       <ellipse cx="28" cy="38" rx="7" ry="11" fill="#e8b96a" transform="rotate(-20,28,38)"/>
@@ -237,23 +502,22 @@
       <ellipse cx="65" cy="62" rx="6" ry="4" fill="#ffaaaa" opacity="0.5"/>
     </svg>
   </button>
-  <span class="badge hidden" id="fabBadge">0</span>
+  <span class="fab-badge hidden" id="fabBadge">0</span>
 </div>
 
+<!-- SUCCESS MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
-    <div class="modal-icon"><i data-lucide="circle-check-big" style="width:52px;height:52px;stroke:#2c4a2e;stroke-width:1.8"></i></div>
-    <h2>สั่งสำเร็จแล้ว!</h2>
-    <p>หมายเลขออเดอร์ของคุณ</p>
-    <div class="order-id" id="modalOrderId">#0001</div>
+    <div class="modal-icon-wrap"><i data-lucide="check"></i></div>
+    <h2>สั่งสำเร็จแล้ว</h2>
+    <p>หมายเลขออเดอร์</p>
+    <div class="order-num" id="modalOrderId">#0001</div>
     <p id="modalSummary"></p>
-    <div class="wait-note"><i data-lucide="clock"></i> กรุณารอสักครู่ เราจะเตรียมให้โดยเร็วที่สุด</div>
-    <button class="btn-close-modal" onclick="closeModal()"><i data-lucide="refresh-cw"></i> ตกลง</button>
+    <button class="btn-modal-close" onclick="closeModal()">ตกลง</button>
   </div>
 </div>
 
 <script>
-// ===== SUPABASE =====
 const SUPA_URL = "https://lwzjleknmnnqwdqqivtz.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3empsZWtubW5ucXdkcXFpdnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTA0ODEsImV4cCI6MjEwNTcyNjQ4MX0.u-zr9TRWnP6DHrDMWUizh7_W6e9XF3otLQotBU-JUlk";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
@@ -263,47 +527,44 @@ const MENU = [
   { id: 2, name: "มัทฉะลาเต้",        price: 40, img: "images/matcha-strawberry.jpeg" },
 ];
 
-let cart = {};
-let sweet = "ปกติ";
-let temp  = "เย็น";
+let cart = {}, sweet = "ปกติ", temp = "เย็น";
 
-// ===== SHOP STATE (from Supabase settings table) =====
-async function applyShopState() {
-  // ใช้ localStorage เป็น fallback สำหรับ shopOpen เพราะเป็น admin setting
+// ===== SHOP STATE =====
+function applyShopState() {
   const isOpen  = localStorage.getItem("shopOpen") !== "false";
+  const pill    = document.getElementById("statusPill");
   const overlay = document.getElementById("closedOverlay");
-  const badge   = document.getElementById("statusBadge");
   if (isOpen) {
     overlay.classList.remove("show");
-    badge.innerHTML = '<i data-lucide="circle-check-big"></i> เปิดรับออเดอร์';
-    badge.classList.remove("closed");
+    pill.className = "status-pill";
+    pill.innerHTML = '<span class="dot"></span> เปิดรับออเดอร์';
   } else {
     overlay.classList.add("show");
-    badge.innerHTML = '<i data-lucide="circle-x"></i> ปิดรับออเดอร์';
-    badge.classList.add("closed");
+    pill.className = "status-pill closed";
+    pill.innerHTML = '<span class="dot"></span> ปิดรับออเดอร์';
   }
-  lucide.createIcons();
 }
+window.addEventListener("storage", e => { if (e.key === "shopOpen") applyShopState(); });
 
-window.addEventListener("storage", (e) => {
-  if (e.key === "shopOpen") applyShopState();
-});
-
-// ===== RENDER MENU =====
+// ===== MENU =====
 function renderMenu() {
   document.getElementById("menuGrid").innerHTML = MENU.map(item => `
     <div class="menu-card" onclick="addToCart(${item.id})">
       <div class="img-wrap">
-        <img src="${item.img}" alt="${item.name}" onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy" />
-        <div class="icon-fallback" id="if-${item.id}" style="display:none"><i data-lucide="cup-soda"></i></div>
-        <span class="price-badge">${item.price} ฿</span>
+        <img src="${item.img}" alt="${item.name}"
+          onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>
+        <div class="icon-fallback" id="if-${item.id}" style="display:none">
+          <i data-lucide="cup-soda"></i>
+        </div>
+        <span class="price-chip">${item.price} ฿</span>
       </div>
-      <div class="info">
-        <span class="name">${item.name}</span>
-        <button class="btn-add" onclick="event.stopPropagation(); addToCart(${item.id})"><i data-lucide="plus"></i></button>
+      <div class="card-body">
+        <span class="card-name">${item.name}</span>
+        <button class="btn-add" onclick="event.stopPropagation();addToCart(${item.id})">
+          <i data-lucide="plus"></i>
+        </button>
       </div>
-    </div>
-  `).join("");
+    </div>`).join("");
   lucide.createIcons();
 }
 
@@ -311,245 +572,214 @@ function renderMenu() {
 function addToCart(id) {
   cart[id] = (cart[id] || 0) + 1;
   renderCart();
-  const fab = document.querySelector('.cart-fab');
-  fab.style.transform = 'scale(1.25)';
-  setTimeout(() => fab.style.transform = '', 200);
+  const fab = document.querySelector(".fab");
+  fab.style.transform = "scale(1.2)";
+  setTimeout(() => fab.style.transform = "", 180);
 }
-
-function changeQty(id, delta) {
-  cart[id] = (cart[id] || 0) + delta;
+function changeQty(id, d) {
+  cart[id] = (cart[id] || 0) + d;
   if (cart[id] <= 0) delete cart[id];
   renderCart();
 }
-
 function renderCart() {
-  const list  = document.getElementById("cartList");
-  const total = document.getElementById("cartTotal");
-  const keys  = Object.keys(cart);
-  if (keys.length === 0) {
-    list.innerHTML = `<div class="cart-empty"><div class="empty-icon"><i data-lucide="package-open"></i></div>ยังไม่มีรายการ — เลือกเมนูด้านบนได้เลย</div>`;
-    total.style.display = "none"; updateFab(0); lucide.createIcons(); return;
+  const box  = document.getElementById("cartBox");
+  const keys = Object.keys(cart);
+  if (!keys.length) {
+    box.innerHTML = `<div class="cart-empty-state"><i data-lucide="shopping-bag"></i>ยังไม่มีรายการ</div>`;
+    updateFab(0); lucide.createIcons(); return;
   }
-  let sum = 0, totalQty = 0;
-  list.innerHTML = keys.map(id => {
+  let sum = 0, qty = 0;
+  const rows = keys.map(id => {
     const item = MENU.find(m => m.id == id);
-    const qty = cart[id]; const sub = item.price * qty;
-    sum += sub; totalQty += qty;
-    return `<div class="cart-item">
-      <img class="cart-thumb" src="${item.img}" alt="${item.name}" onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'" />
-      <span class="item-name">${item.name}</span>
+    const q = cart[id], sub = item.price * q;
+    sum += sub; qty += q;
+    return `<div class="cart-row">
+      <img class="cart-thumb" src="${item.img}" alt="${item.name}"
+        onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>
+      <span class="cart-item-name">${item.name}</span>
       <div class="qty-ctrl">
-        <button class="qty-btn" onclick="changeQty(${id}, -1)">−</button>
-        <span class="qty-num">${qty}</span>
-        <button class="qty-btn" onclick="changeQty(${id}, +1)">+</button>
+        <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
+        <span class="qty-num">${q}</span>
+        <button class="qty-btn" onclick="changeQty(${id},+1)">+</button>
       </div>
-      <span class="item-subtotal">${sub} ฿</span>
+      <span class="item-price">${sub} ฿</span>
     </div>`;
   }).join("");
-  document.getElementById("totalPrice").textContent = `${sum} ฿`;
-  total.style.display = "flex"; updateFab(totalQty); lucide.createIcons();
+  box.innerHTML = rows + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum} ฿</span></div>`;
+  updateFab(qty); lucide.createIcons();
+}
+function updateFab(q) {
+  const b = document.getElementById("fabBadge");
+  q > 0 ? (b.textContent = q, b.classList.remove("hidden")) : b.classList.add("hidden");
 }
 
-function updateFab(qty) {
-  const badge = document.getElementById("fabBadge");
-  qty > 0 ? (badge.textContent = qty, badge.classList.remove("hidden")) : badge.classList.add("hidden");
-}
-
+// ===== TAGS =====
 function initTags() {
-  document.getElementById("sweetTags").addEventListener("click", e => {
-    const btn = e.target.closest(".tag-btn"); if (!btn) return;
-    document.querySelectorAll("#sweetTags .tag-btn").forEach(b => b.classList.remove("selected"));
-    btn.classList.add("selected"); sweet = btn.dataset.val;
-  });
-  document.getElementById("tempTags").addEventListener("click", e => {
-    const btn = e.target.closest(".tag-btn"); if (!btn) return;
-    document.querySelectorAll("#tempTags .tag-btn").forEach(b => b.classList.remove("selected"));
-    btn.classList.add("selected"); temp = btn.dataset.val;
+  ["sweetTags","tempTags"].forEach(id => {
+    document.getElementById(id).addEventListener("click", e => {
+      const btn = e.target.closest(".tag"); if (!btn) return;
+      document.querySelectorAll(`#${id} .tag`).forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (id === "sweetTags") sweet = btn.dataset.val;
+      else temp = btn.dataset.val;
+    });
   });
 }
 
-// ===== SUBMIT ORDER → SUPABASE =====
+// ===== SUBMIT =====
 async function submitOrder() {
   const isOpen = localStorage.getItem("shopOpen") !== "false";
   if (!isOpen) { applyShopState(); return; }
-
   const name = document.getElementById("custName").value.trim();
-  if (!name) { alert("กรุณาใส่ชื่อผู้สั่งด้วยนะ"); document.getElementById("custName").focus(); return; }
-  if (Object.keys(cart).length === 0) { alert("ยังไม่ได้เลือกเมนูเลยนะ"); return; }
+  if (!name) { document.getElementById("custName").focus(); return; }
+  if (!Object.keys(cart).length) return;
 
   const btn = document.getElementById("btnOrder");
   btn.disabled = true;
-
   const phone = document.getElementById("custPhone").value.trim();
   const note  = document.getElementById("custNote").value.trim();
-  const total = Object.keys(cart).reduce((s, id) => s + MENU.find(m => m.id == id).price * cart[id], 0);
+  const total = Object.keys(cart).reduce((s,id) => s + MENU.find(m=>m.id==id).price*cart[id], 0);
   const items = Object.keys(cart).map(id => {
-    const item = MENU.find(m => m.id == id);
+    const item = MENU.find(m=>m.id==id);
     return { name: item.name, qty: cart[id], price: item.price };
   });
 
   const { data, error } = await sb.from("orders").insert([{
     name, phone, note, sweet, temp,
-    items: JSON.stringify(items),
-    total,
-    status: "pending",
-    timestamp: Date.now()
+    items: JSON.stringify(items), total,
+    status: "pending", timestamp: Date.now()
   }]).select().single();
 
   btn.disabled = false;
-
   if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
 
-  sessionStorage.setItem("myOrderId", data.id);
-  localStorage.setItem("myOrderId", data.id);  // เก็บถาวรไม่หายเมื่อปิดแท็บ
+  localStorage.setItem("myOrderId", data.id);
+  localStorage.setItem("myOrderStatus", "pending");
+  lastKnownStatus = "pending"; lastRenderedStatus = "";
 
-  cart = {};
-  renderCart();
-  document.getElementById("custName").value  = "";
+  cart = {}; renderCart();
+  document.getElementById("custName").value = "";
   document.getElementById("custPhone").value = "";
-  document.getElementById("custNote").value  = "";
+  document.getElementById("custNote").value = "";
 
-  checkMyOrderStatus();
-  const bar = document.getElementById("myOrderBar");
-  if (bar) setTimeout(() => bar.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+  document.getElementById("modalOrderId").textContent = `#${String(data.id).slice(-4).padStart(4,"0")}`;
+  document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} ×${i.qty}`).join(", ") + `<br>ความหวาน: ${sweet} · ${temp}`;
+  document.getElementById("modalOverlay").classList.add("show");
+
+  subscribeMyOrder();
 }
 
-// ===== MY ORDER TRACKER (real-time via Supabase) =====
-const STATUS_ICON = { pending: "clock", accepted: "chef-hat", ready: "package-check" };
-const STATUS_TEXT = { pending: "รอการยืนยันจากร้าน", accepted: "ร้านรับออเดอร์แล้ว — กำลังเตรียม", ready: "สินค้าพร้อมแล้ว! มารับได้เลย" };
-const STATUS_STEP = { pending: 1, accepted: 2, ready: 3 };
+// ===== ORDER TRACKER =====
+const STATUS_ICON = { pending:"clock", accepted:"chef-hat", ready:"package-check" };
+const STATUS_LABEL = { pending:"รอการยืนยัน", accepted:"กำลังเตรียม", ready:"พร้อมรับแล้ว!" };
+const STATUS_STEPS = ["สั่งแล้ว","ยืนยัน","พร้อมรับ"];
+const STATUS_STEP_NUM = { pending:0, accepted:1, ready:2 };
 
-function stepDots(step) {
-  const steps = ["สั่งแล้ว", "ยืนยันแล้ว", "พร้อมรับ"];
-  return steps.map((s, i) => {
-    const active = i < step; const cur = i === step - 1;
-    return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.75rem">
-      <span style="width:9px;height:9px;border-radius:50%;background:${active?"currentColor":"rgba(0,0,0,0.15)"};display:inline-block;opacity:${active?1:0.4}"></span>
-      <span style="opacity:${cur?1:0.5};font-weight:${cur?800:600}">${s}</span>
-      ${i < steps.length-1 ? '<span style="opacity:0.3">›</span>' : ""}
-    </span>`;
-  }).join("");
-}
+let lastKnownStatus = localStorage.getItem("myOrderStatus") || "";
+let lastRenderedStatus = "";
 
 function renderOrderBar(order) {
   const bar = document.getElementById("myOrderBar");
   if (!bar || !order) return;
   const st = order.status || "pending";
   const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
-  const itemList = items.map(i => `${i.name} ×${i.qty}`).join(", ");
-  const timeStr = new Date(order.timestamp).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const step = STATUS_STEP_NUM[st] ?? 0;
+
+  const stepHTML = STATUS_STEPS.map((s,i) => `
+    <div class="step-item">
+      <div class="step-dot ${i<=step?"done":""}"></div>
+      <div class="step-label ${i===step?"active":""}">${s}</div>
+    </div>
+    ${i < STATUS_STEPS.length-1 ? `<div class="step-line ${i<step?"done":""}"></div>` : ""}
+  `).join("");
+
   bar.style.display = "block";
   bar.innerHTML = `
-    <div class="myorder-bar ${st}">
-      <div class="bar-icon"><i data-lucide="${STATUS_ICON[st]||"clock"}"></i></div>
-      <div style="font-size:1rem;font-weight:800;margin-bottom:4px">${STATUS_TEXT[st]||""}</div>
-      <div style="font-size:0.82rem;opacity:0.85">ออเดอร์ #${String(order.id).slice(-4).padStart(4,"0")} · ${order.name} · ${timeStr}</div>
-      <div style="font-size:0.8rem;margin-top:3px;opacity:0.75">${itemList} · ${order.total} ฿</div>
-      <div style="display:inline-flex;gap:4px;align-items:center;margin-top:10px">${stepDots(STATUS_STEP[st]||1)}</div>
-      ${st === "ready" ? `<div style="margin-top:12px"><button onclick="clearMyOrder()" style="background:#1565c0;color:#fff;border:none;border-radius:10px;padding:8px 20px;font-family:inherit;font-weight:700;font-size:0.85rem;cursor:pointer">รับของแล้ว / สั่งใหม่</button></div>` : ""}
+    <div class="order-status-card">
+      <div class="osc-top">
+        <div class="osc-icon-wrap ${st}"><i data-lucide="${STATUS_ICON[st]||"clock"}"></i></div>
+        <div>
+          <div class="osc-title">${STATUS_LABEL[st]||""}</div>
+          <div class="osc-sub">ออเดอร์ #${String(order.id).slice(-4).padStart(4,"0")} · ${order.name} · ${items.map(i=>`${i.name}×${i.qty}`).join(", ")}</div>
+        </div>
+      </div>
+      <div class="step-bar">${stepHTML}</div>
+      ${st === "ready" ? `<button class="btn-new-order" onclick="clearMyOrder()">รับของแล้ว — สั่งใหม่</button>` : ""}
     </div>`;
   lucide.createIcons();
 }
 
-function clearMyOrder() {
-  localStorage.removeItem("myOrderId");
-  localStorage.removeItem("myOrderStatus");
-  sessionStorage.removeItem("myOrderId");
-  lastKnownStatus = "";
-  if (realtimeSub) { realtimeSub.unsubscribe(); realtimeSub = null; }
-  const bar = document.getElementById("myOrderBar");
-  bar.style.display = "none";
-  bar.innerHTML = "";
-}
-
-let lastKnownStatus = localStorage.getItem("myOrderStatus") || "";
-let lastRenderedStatus = "";
-
 async function checkMyOrderStatus() {
-  const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
+  const myId = localStorage.getItem("myOrderId");
   if (!myId) return;
   const { data } = await sb.from("orders").select("*").eq("id", myId).single();
   if (!data) return;
-
-  // trigger เสียง + notification เมื่อสถานะเปลี่ยน
   if (data.status !== lastKnownStatus && lastKnownStatus !== "") {
-    if (data.status === "accepted") notifyStatusChange("✅ ร้านรับออเดอร์แล้ว กำลังเตรียม...", data.name);
-    if (data.status === "ready")    notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", data.name);
+    if (data.status === "accepted" || data.status === "ready") playNotify();
   }
   lastKnownStatus = data.status;
   localStorage.setItem("myOrderStatus", data.status);
-
-  // render เฉพาะเมื่อสถานะเปลี่ยนจริง ป้องกันกระพริบ
   if (data.status !== lastRenderedStatus) {
     lastRenderedStatus = data.status;
     renderOrderBar(data);
   }
 }
 
-// Real-time subscription
 let realtimeSub = null;
 function subscribeMyOrder() {
-  const myId = localStorage.getItem("myOrderId") || sessionStorage.getItem("myOrderId");
+  const myId = localStorage.getItem("myOrderId");
   if (!myId) return;
   if (realtimeSub) realtimeSub.unsubscribe();
-  realtimeSub = sb.channel("order-status-" + myId)
+  realtimeSub = sb.channel("os-" + myId)
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, payload => {
       if (String(payload.new.id) === String(myId)) {
-        if (payload.new.status !== lastKnownStatus) {
-          if (payload.new.status === "accepted") notifyStatusChange("✅ ร้านรับออเดอร์แล้ว กำลังเตรียม...", payload.new.name);
-          if (payload.new.status === "ready")    notifyStatusChange("🎉 สินค้าพร้อมแล้ว! มารับได้เลย", payload.new.name);
-        }
+        if (payload.new.status !== lastKnownStatus) playNotify();
         lastKnownStatus = payload.new.status;
         localStorage.setItem("myOrderStatus", payload.new.status);
-        renderOrderBar(payload.new);
+        lastRenderedStatus = "";
+        checkMyOrderStatus();
       }
-    })
-    .subscribe();
+    }).subscribe();
   setInterval(checkMyOrderStatus, 3000);
 }
 
-function requestNotifyPermission() {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
+function clearMyOrder() {
+  localStorage.removeItem("myOrderId"); localStorage.removeItem("myOrderStatus");
+  lastKnownStatus = ""; lastRenderedStatus = "";
+  if (realtimeSub) { realtimeSub.unsubscribe(); realtimeSub = null; }
+  const bar = document.getElementById("myOrderBar");
+  bar.style.display = "none"; bar.innerHTML = "";
 }
 
-function notifyStatusChange(message, name) {
-  // เสียงแจ้งเตือนจากไฟล์
+// ===== NOTIFY =====
+function requestNotifyPermission() {
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+}
+function playNotify() {
   try {
-    const audio = new Audio("น้องหาแจ้งเตือน.mp3");
-    audio.volume = 1.0;
-    audio.play().catch(() => {});
-  } catch(e) {}
-  // Web Notification
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("☕ Zebros Coffee", {
-      body: message,
-      icon: "images/matcha-latte.jpeg"
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523,659,784].forEach((f,i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.25, ctx.currentTime + i*0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.3);
+      o.start(ctx.currentTime + i*0.15);
+      o.stop(ctx.currentTime + i*0.15 + 0.3);
     });
-  }
+  } catch(e) {}
 }
 
 function closeModal() { document.getElementById("modalOverlay").classList.remove("show"); }
-function scrollToCart() { document.querySelector(".section-title").scrollIntoView({ behavior: "smooth" }); }
+function scrollToCart() { document.getElementById("cartBox").scrollIntoView({ behavior:"smooth", block:"center" }); }
 
 // ===== INIT =====
-renderMenu();
-renderCart();
-initTags();
-applyShopState();
-checkMyOrderStatus().then(() => {
-  lastRenderedStatus = lastKnownStatus;
-  subscribeMyOrder();
-});
+renderMenu(); renderCart(); initTags(); applyShopState();
+checkMyOrderStatus().then(() => { lastRenderedStatus = lastKnownStatus; subscribeMyOrder(); });
 requestNotifyPermission();
 lucide.createIcons();
-
-// fetch ทันทีเมื่อกลับมาที่แท็บ (แก้ปัญหา mobile background)
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    checkMyOrderStatus();
-  }
+  if (document.visibilityState === "visible") checkMyOrderStatus();
 });
 </script>
 </body>
