@@ -475,15 +475,16 @@ function subscribeMyOrder() {
   if (realtimeSub) realtimeSub.unsubscribe();
   realtimeSub = sb.channel("order-status-" + myId)
     .on("postgres_changes", {
-      event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${myId}`
+      event: "UPDATE", schema: "public", table: "orders"
     }, payload => {
-      renderOrderBar(payload.new);
-      // ปัญหา 3: แจ้งเตือนเมื่อสินค้าพร้อม
-      if (payload.new.status === "ready") {
-        notifyReady(payload.new.name);
+      if (String(payload.new.id) === String(myId)) {
+        renderOrderBar(payload.new);
+        if (payload.new.status === "ready") notifyReady(payload.new.name);
       }
     })
     .subscribe();
+  // poll ทุก 3 วิ เป็น fallback
+  setInterval(checkMyOrderStatus, 3000);
 }
 
 // ===== WEB NOTIFICATION =====
