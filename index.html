@@ -449,6 +449,7 @@ async function toggleShopState() {
 // ===== ORDERS =====
 let allOrders = [], currentFilter = "all";
 let knownOrderIds = null; // null = ยังไม่ได้ init
+let isLoadingOrders = false; // ป้องกัน concurrent calls
 
 // ===== SOUND & NOTIFICATION =====
 function playNewOrderSound() {
@@ -520,43 +521,51 @@ function flashTitle(order) {
 }
 
 async function loadOrders() {
-  const { data, error } = await sb.from("orders").select("*").order("timestamp", { ascending: false });
-  if (error) { console.error(error); return; }
-  const orders = (data || []).map(o => ({
-    ...o, items: typeof o.items === "string" ? JSON.parse(o.items) : (o.items || [])
-  }));
+  if (isLoadingOrders) return; // ป้องกัน call ซ้อน
+  isLoadingOrders = true;
+  try {
+    const { data, error } = await sb.from("orders").select("*").order("timestamp", { ascending: false });
+    if (error) { console.error(error); return; }
+    const orders = (data || []).map(o => ({
+      ...o, items: typeof o.items === "string" ? JSON.parse(o.items) : (o.items || [])
+    }));
 
-  // ตรวจจับ order ใหม่ที่เพิ่งเข้า
-  if (knownOrderIds !== null) {
-    const newOrders = orders.filter(o =>
-      o.status === "pending" && !knownOrderIds.has(o.id)
-    );
-    if (newOrders.length > 0) {
-      playNewOrderSound();
-      newOrders.forEach(o => {
-        sendNotification(o);
-        flashTitle(o);
-      });
+    // ตรวจจับ order ใหม่ที่เพิ่งเข้า
+    if (knownOrderIds !== null) {
+      const newOrders = orders.filter(o =>
+        o.status === "pending" && !knownOrderIds.has(o.id)
+      );
+      if (newOrders.length > 0) {
+        playNewOrderSound();
+        newOrders.forEach(o => {
+          sendNotification(o);
+          flashTitle(o);
+        });
+      }
     }
+    knownOrderIds = new Set(orders.map(o => o.id));
+    allOrders = orders;
+    renderOrders();
+  } finally {
+    isLoadingOrders = false;
   }
-  knownOrderIds = new Set(orders.map(o => o.id));
-  allOrders = orders;
-  renderOrders();
 }
 
 function subscribeOrders() {
   sb.channel("admin-orders")
     .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
     .subscribe();
+  // poll ทุก 2 วิ เป็น fallback กรณี WebSocket ขาด
+  setInterval(loadOrders, 2000);
 }
 
 async function acceptOrder(id) {
   await sb.from("orders").update({ status: "accepted" }).eq("id", id);
-  loadOrders();
+  await loadOrders();
 }
 async function readyOrder(id) {
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
-  loadOrders();
+  await loadOrders();
 }
 async function clearDone() {
   await sb.from("orders").delete().eq("status", "ready");
