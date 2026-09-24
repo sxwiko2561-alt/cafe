@@ -599,6 +599,8 @@ async function pollShopState() {
     const { data } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
     const isOpen = data ? data.value === "true" : true;
     applyShopState(isOpen);
+    // ถ้าร้านปิด — ล้างสถานะออเดอร์ลูกค้าทันที
+    if (!isOpen) clearMyOrder();
   } catch (e) {
     // network error — leave current state as-is
   }

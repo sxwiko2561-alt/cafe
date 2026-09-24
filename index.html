@@ -346,7 +346,6 @@
   <!-- FILTER -->
   <div class="top-row">
     <div class="section-label">รายการออเดอร์</div>
-    <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
     <button class="ftab active" onclick="setFilter('all',this)">ทั้งหมด</button>
@@ -558,20 +557,6 @@ async function readyOrder(id) {
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
   loadOrders();
 }
-async function clearDone() {
-  if (!confirm("ล้างออเดอร์ทั้งหมดและเริ่มนับใหม่ที่ #0001 ใช่ไหม?")) return;
-  // ลบทุก order โดยใช้ timestamp >= 0 (ทุก record มี timestamp)
-  const { error: delErr } = await sb.from("orders").delete().gte("timestamp", 0);
-  if (delErr) {
-    alert("ลบไม่สำเร็จ: " + delErr.message);
-    console.error("clearDone delete error:", delErr);
-    return;
-  }
-  const { error: seqErr } = await sb.rpc("reset_order_seq");
-  if (seqErr) console.warn("reset_order_seq:", seqErr.message);
-  loadOrders();
-}
-
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
