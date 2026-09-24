@@ -851,8 +851,8 @@ function renderOrderBar(order) {
 async function checkMyOrderStatus() {
   const myId = localStorage.getItem("myOrderId");
   if (!myId) return;
-  const { data } = await sb.from("orders").select("*").eq("id", myId).single();
-  if (!data) {
+  const { data, error } = await sb.from("orders").select("*").eq("id", myId).single();
+  if (!data || error) {
     // order ถูกลบ (แอดมิน reset) — ล้างหน้าจอลูกค้าอัตโนมัติ
     clearMyOrder();
     return;
@@ -869,10 +869,14 @@ async function checkMyOrderStatus() {
 }
 
 let realtimeSub = null;
+let pollInterval = null; // track interval เพื่อ clear ได้
+
 function subscribeMyOrder() {
   const myId = localStorage.getItem("myOrderId");
   if (!myId) return;
   if (realtimeSub) realtimeSub.unsubscribe();
+  // clear interval เก่าก่อนสร้างใหม่
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
   realtimeSub = sb.channel("os-" + myId)
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, payload => {
       if (String(payload.new.id) === String(myId)) {
@@ -883,14 +887,16 @@ function subscribeMyOrder() {
         checkMyOrderStatus();
       }
     }).subscribe();
-  // Also poll order status every 3 seconds as fallback
-  setInterval(checkMyOrderStatus, 3000);
+  // poll ทุก 3 วิ เป็น fallback — เก็บ ref ไว้ clear ได้
+  pollInterval = setInterval(checkMyOrderStatus, 3000);
 }
 
 function clearMyOrder() {
   localStorage.removeItem("myOrderId"); localStorage.removeItem("myOrderStatus");
   lastKnownStatus = ""; lastRenderedStatus = "";
   if (realtimeSub) { realtimeSub.unsubscribe(); realtimeSub = null; }
+  // หยุด poll ด้วย
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
   const bar = document.getElementById("myOrderBar");
   bar.style.display = "none"; bar.innerHTML = "";
 }
