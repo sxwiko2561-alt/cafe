@@ -230,7 +230,9 @@
     }
     .menu-card .img-wrap img {
       width: 100%; height: 100%;
-      object-fit: cover; object-position: center 20%;
+      object-fit: contain;
+      object-position: center center;
+      padding: 8px;
       transition: transform 0.35s;
     }
     .menu-card:hover .img-wrap img { transform: scale(1.05); }
@@ -285,8 +287,8 @@
     .cart-row:last-of-type { border-bottom: none; }
     .cart-thumb {
       width: 40px; height: 40px; border-radius: 10px;
-      object-fit: cover; object-position: center 20%;
-      background: #f5f5f5; flex-shrink: 0;
+      object-fit: contain; object-position: center;
+      background: #f5f5f5; flex-shrink: 0; padding: 2px;
     }
     .cart-thumb-icon {
       width: 40px; height: 40px; border-radius: 10px;
@@ -561,15 +563,24 @@ const MENU = {
     { id: 9, name: "เอสเปรสโซ่", price: 40, img: "images/กาแฟ/espresso.png" },
   ],
   ชานม: [
-    { id: 101, name: "ชาไทยเย็น", price: 35, img: "" },
-    { id: 102, name: "ชาเขียวนม", price: 35, img: "" },
-    { id: 103, name: "ชาอูหลง", price: 40, img: "" },
-    { id: 104, name: "นมสด", price: 30, img: "" },
+    { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png" },
+    { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png" },
+    { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png" },
+    { id: 104, name: "ชาไทยสตอเบอรี่", price: 35, img: "images/ชานม/thai-tea-strawberry.png" },
+    { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png" },
+    { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png" },
+    { id: 107, name: "บัตเตอร์เบียร์", price: 35, img: "images/ชานม/butterbeer.png" },
+    { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png" },
   ],
   มัทฉะ: [
-    { id: 201, name: "มัทฉะลาเต้", price: 40, img: "" },
-    { id: 202, name: "มัทฉะสตอเบอร์รี่", price: 45, img: "" },
-    { id: 203, name: "มัทฉะชาไทย", price: 45, img: "" },
+    { id: 201, name: "เพียวมัทฉะ", price: 35, img: "images/มัทฉะ/matcha-pure.png" },
+    { id: 202, name: "มัทฉะลาเต้", price: 40, img: "images/มัทฉะ/matcha-latte.png" },
+    { id: 203, name: "มัทฉะมะพร้าว", price: 40, img: "images/มัทฉะ/matcha-coconut.png" },
+    { id: 204, name: "มัทฉะน้ำผึ้งมะนาว", price: 40, img: "images/มัทฉะ/matcha-honey-lemon.png" },
+    { id: 205, name: "มัทฉะส้ม", price: 40, img: "images/มัทฉะ/matcha-orange.png" },
+    { id: 206, name: "มัทฉะโฟมมะพร้าว", price: 40, img: "images/มัทฉะ/matcha-coconut-foam.png" },
+    { id: 207, name: "มัทฉะสตอเบอรี่", price: 40, img: "images/มัทฉะ/matcha-strawberry.png" },
+    { id: 208, name: "มัทฉะนมโอ้ต", price: 45, img: "images/มัทฉะ/matcha-oat.png" },
   ]
 };
 
