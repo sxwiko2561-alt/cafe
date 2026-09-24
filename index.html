@@ -168,12 +168,15 @@
     .ftab:hover  { background: var(--accent-light); color: var(--text); }
     .ftab.active { background: var(--accent); color: #fff; font-weight: 600; }
     .ftab .cnt {
-      display: inline-block; background: var(--red);
-      color: #fff; font-size: 0.62rem; font-weight: 700;
-      padding: 1px 5px; border-radius: 8px; margin-left: 3px;
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      margin-left: 5px;
       vertical-align: middle;
     }
-    .ftab.active .cnt { background: rgba(255,255,255,0.3); }
+    .ftab.active .cnt { background: rgba(255,255,255,0.9); }
+    .ftab .cnt.hidden { display: none; }
 
     /* ===== ORDER CARD ===== */
     .order-card {
@@ -347,7 +350,7 @@
     <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
-    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt hidden" id="cntAll"></span></button>
+    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt" id="cntAll"></span></button>
     <button class="ftab"        id="ftab-pending"  onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
     <button class="ftab"        id="ftab-accepted" onclick="setFilter('accepted',this)">🔧 เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
     <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ <span class="cnt hidden" id="cntReady"></span></button>
@@ -623,11 +626,11 @@ function renderOrders() {
   document.getElementById("statPending").textContent = pending.length;
   document.getElementById("statRevenue").textContent = revenue;
 
-  // อัปเดต badge ทุก tab
+  // อัปเดต badge ทุก tab (จุดแดงเล็กๆ — ไม่มีตัวเลข)
   function setBadge(id, count) {
     const el = document.getElementById(id);
     if (!el) return;
-    if (count > 0) { el.textContent = count; el.classList.remove("hidden"); }
+    if (count > 0) { el.classList.remove("hidden"); }
     else { el.classList.add("hidden"); }
   }
   setBadge("cntAll",      allOrders.length);
