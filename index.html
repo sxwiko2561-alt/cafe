@@ -349,10 +349,10 @@
     <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
-    <button class="ftab active" onclick="setFilter('all',this)">ทั้งหมด</button>
-    <button class="ftab" onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
-    <button class="ftab" onclick="setFilter('accepted',this)">🔧 เตรียม</button>
-    <button class="ftab" onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
+    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt hidden" id="cntAll"></span></button>
+    <button class="ftab"        id="ftab-pending"  onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
+    <button class="ftab"        id="ftab-accepted" onclick="setFilter('accepted',this)">🔧 เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
+    <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ <span class="cnt hidden" id="cntReady"></span></button>
   </div>
 
   <!-- ORDER LIST -->
@@ -587,19 +587,31 @@ function locationBadge(loc) {
 }
 
 function renderOrders() {
-  const pending = allOrders.filter(o => o.status === "pending");
-  const revenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const pending  = allOrders.filter(o => o.status === "pending");
+  const accepted = allOrders.filter(o => o.status === "accepted");
+  const ready    = allOrders.filter(o => o.status === "ready");
+  const revenue  = allOrders.reduce((s, o) => s + (o.total || 0), 0);
 
   document.getElementById("statTotal").textContent   = allOrders.length;
   document.getElementById("statPending").textContent = pending.length;
   document.getElementById("statRevenue").textContent = revenue;
 
-  const cnt = document.getElementById("cntPending");
-  if (pending.length > 0) {
-    cnt.textContent = pending.length; cnt.classList.remove("hidden");
-  } else {
-    cnt.classList.add("hidden");
+  // อัปเดต badge ทุก tab
+  function setBadge(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) { el.textContent = count; el.classList.remove("hidden"); }
+    else { el.classList.add("hidden"); }
   }
+  setBadge("cntAll",      allOrders.length);
+  setBadge("cntPending",  pending.length);
+  setBadge("cntAccepted", accepted.length);
+  setBadge("cntReady",    ready.length);
+
+  // re-activate tab ที่ถูก filter อยู่ (realtime อาจ reset active class)
+  document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
+  const activeTab = document.getElementById("ftab-" + (currentFilter === "all" ? "all" : currentFilter));
+  if (activeTab) activeTab.classList.add("active");
 
   const filtered = currentFilter === "all" ? allOrders : allOrders.filter(o => o.status === currentFilter);
   const list = document.getElementById("orderList");
