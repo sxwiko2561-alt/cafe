@@ -452,13 +452,25 @@ let knownOrderIds = null; // null = ยังไม่ได้ init
 let isLoadingOrders = false; // ป้องกัน concurrent calls
 
 // ===== SOUND & NOTIFICATION =====
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // resume ถ้า suspended (browser policy)
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+// unlock AudioContext ตอน user แตะหน้าจอครั้งแรก
+document.addEventListener("click",     () => getAudioCtx(), { once: true });
+document.addEventListener("touchstart",() => getAudioCtx(), { once: true });
+
 function playNewOrderSound() {
   if (!soundEnabled) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // เสียง "ดิ้ง ดิ้ง ดิ้ง" สามโน้ตชัดเจน
+    const ctx = getAudioCtx();
     const notes = [
-      { freq: 880, start: 0.0,  dur: 0.18 },
+      { freq: 880,  start: 0.0,  dur: 0.18 },
       { freq: 1100, start: 0.22, dur: 0.18 },
       { freq: 1320, start: 0.44, dur: 0.28 },
     ];
@@ -500,7 +512,10 @@ function toggleSound() {
   const btn = document.getElementById("btnSound");
   btn.textContent = soundEnabled ? "🔔" : "🔕";
   btn.classList.toggle("on", soundEnabled);
-  if (soundEnabled) playNewOrderSound(); // ทดสอบเสียงเมื่อเปิด
+  if (soundEnabled) {
+    getAudioCtx(); // unlock แล้วทดสอบเสียง
+    playNewOrderSound();
+  }
 }
 
 // flash title tab
