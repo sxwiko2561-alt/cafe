@@ -346,6 +346,7 @@
   <!-- FILTER -->
   <div class="top-row">
     <div class="section-label">รายการออเดอร์</div>
+    <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
     <button class="ftab active" onclick="setFilter('all',this)">ทั้งหมด</button>
@@ -557,6 +558,11 @@ async function readyOrder(id) {
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
   loadOrders();
 }
+async function clearDone() {
+  await sb.from("orders").delete().eq("status", "ready");
+  loadOrders();
+}
+
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
