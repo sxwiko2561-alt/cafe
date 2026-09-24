@@ -886,8 +886,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 checkMyOrderStatus().then(() => { lastRenderedStatus = lastKnownStatus; subscribeMyOrder(); });
 requestNotifyPermission();
-</script>beMyOrder(); });
-requestNotifyPermission();
 lucide.createIcons();
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") { pollShopState(); checkMyOrderStatus(); }
