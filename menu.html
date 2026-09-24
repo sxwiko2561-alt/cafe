@@ -852,7 +852,11 @@ async function checkMyOrderStatus() {
   const myId = localStorage.getItem("myOrderId");
   if (!myId) return;
   const { data } = await sb.from("orders").select("*").eq("id", myId).single();
-  if (!data) return;
+  if (!data) {
+    // order ถูกลบ (แอดมิน reset) — ล้างหน้าจอลูกค้าอัตโนมัติ
+    clearMyOrder();
+    return;
+  }
   if (data.status !== lastKnownStatus && lastKnownStatus !== "") {
     if (data.status === "accepted" || data.status === "ready") playNotify();
   }

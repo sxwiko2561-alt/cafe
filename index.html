@@ -461,7 +461,10 @@ async function readyOrder(id) {
   loadOrders();
 }
 async function clearDone() {
-  await sb.from("orders").delete().eq("status", "ready");
+  if (!confirm("ล้างออเดอร์ทั้งหมดและเริ่มนับใหม่ที่ #0001 ใช่ไหม?")) return;
+  await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error } = await sb.rpc("reset_order_seq");
+  if (error) console.warn("reset_order_seq:", error.message);
   loadOrders();
 }
 
