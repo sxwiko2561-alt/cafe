@@ -31,6 +31,16 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Sarabun', 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
 
+    .btn-sound {
+      background: var(--accent-light); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 6px 12px;
+      font-size: 0.78rem; font-weight: 600; font-family: inherit;
+      color: var(--text-2); cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-sound:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-sound.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
     /* ===== LOGIN ===== */
     #loginOverlay {
       position: fixed; inset: 0; z-index: 9000;
@@ -303,6 +313,7 @@
       </div>
     </div>
     <div class="shop-toggle">
+      <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="เปิด/ปิดเสียงแจ้งเตือน">🔔</button>
       <span class="toggle-label" id="toggleLabel">เปิดรับออเดอร์</span>
       <div class="toggle-track on" id="toggleTrack" title="กดค้าง 2 วิ เพื่อเปลี่ยนสถานะ">
         <div class="toggle-thumb"></div>
@@ -436,13 +447,99 @@ async function toggleShopState() {
 
 // ===== ORDERS =====
 let allOrders = [], currentFilter = "all";
+let knownOrderIds = null; // null = ยังไม่ได้ init
+
+// ===== SOUND & NOTIFICATION =====
+function playNewOrderSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // เสียง "ดิ้ง ดิ้ง ดิ้ง" สามโน้ตชัดเจน
+    const notes = [
+      { freq: 880, start: 0.0,  dur: 0.18 },
+      { freq: 1100, start: 0.22, dur: 0.18 },
+      { freq: 1320, start: 0.44, dur: 0.28 },
+    ];
+    notes.forEach(({ freq, start, dur }) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + start);
+      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur + 0.05);
+    });
+  } catch (e) { console.warn("Audio error:", e); }
+}
+
+function sendNotification(order) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  const items = order.items.map(i => `${i.name}×${i.qty}`).join(", ");
+  new Notification(`🛎️ ออเดอร์ใหม่ #${String(order.order_seq||"").padStart(4,"0")}`, {
+    body: `${order.name} · ${items} · ${order.total}฿`,
+    icon: "images/corgi.jpg",
+    badge: "images/corgi.jpg",
+  });
+}
+
+function requestNotifyPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+let soundEnabled = true;
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById("btnSound");
+  btn.textContent = soundEnabled ? "🔔" : "🔕";
+  btn.classList.toggle("on", soundEnabled);
+  if (soundEnabled) playNewOrderSound(); // ทดสอบเสียงเมื่อเปิด
+}
+
+// flash title tab
+let titleFlash = null;
+function flashTitle(order) {
+  let on = true;
+  clearInterval(titleFlash);
+  titleFlash = setInterval(() => {
+    document.title = on
+      ? `🛎️ ออเดอร์ใหม่! #${String(order.order_seq||"").padStart(4,"0")}`
+      : "Zebros Coffee — Admin";
+    on = !on;
+  }, 700);
+  setTimeout(() => {
+    clearInterval(titleFlash);
+    document.title = "Zebros Coffee — Admin";
+  }, 8000);
+}
 
 async function loadOrders() {
   const { data, error } = await sb.from("orders").select("*").order("timestamp", { ascending: false });
   if (error) { console.error(error); return; }
-  allOrders = (data || []).map(o => ({
+  const orders = (data || []).map(o => ({
     ...o, items: typeof o.items === "string" ? JSON.parse(o.items) : (o.items || [])
   }));
+
+  // ตรวจจับ order ใหม่ที่เพิ่งเข้า
+  if (knownOrderIds !== null) {
+    const newOrders = orders.filter(o =>
+      o.status === "pending" && !knownOrderIds.has(o.id)
+    );
+    if (newOrders.length > 0) {
+      playNewOrderSound();
+      newOrders.forEach(o => {
+        sendNotification(o);
+        flashTitle(o);
+      });
+    }
+  }
+  knownOrderIds = new Set(orders.map(o => o.id));
+  allOrders = orders;
   renderOrders();
 }
 
@@ -558,6 +655,7 @@ function renderOrders() {
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
   loadShopState(); loadOrders(); subscribeOrders();
+  requestNotifyPermission();
 } else {
   renderShopUI();
 }
