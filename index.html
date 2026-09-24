@@ -413,7 +413,8 @@ async function toggleShopState() {
   const { error } = await sb.from("settings").update({ value: String(newState) }).eq("key", "shopOpen");
   if (error) { console.error(error); return; }
   if (newState === true) {
-    await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const { error: delErr } = await sb.from("orders").delete().gte("timestamp", 0);
+    if (delErr) console.warn("delete orders error:", delErr.message);
     const { error: rpcErr } = await sb.rpc("reset_order_seq");
     if (rpcErr) console.warn("reset_order_seq:", rpcErr.message);
     loadOrders();
@@ -559,9 +560,15 @@ async function readyOrder(id) {
 }
 async function clearDone() {
   if (!confirm("ล้างออเดอร์ทั้งหมดและเริ่มนับใหม่ที่ #0001 ใช่ไหม?")) return;
-  await sb.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  const { error } = await sb.rpc("reset_order_seq");
-  if (error) console.warn("reset_order_seq:", error.message);
+  // ลบทุก order โดยใช้ timestamp >= 0 (ทุก record มี timestamp)
+  const { error: delErr } = await sb.from("orders").delete().gte("timestamp", 0);
+  if (delErr) {
+    alert("ลบไม่สำเร็จ: " + delErr.message);
+    console.error("clearDone delete error:", delErr);
+    return;
+  }
+  const { error: seqErr } = await sb.rpc("reset_order_seq");
+  if (seqErr) console.warn("reset_order_seq:", seqErr.message);
   loadOrders();
 }
 
