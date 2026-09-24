@@ -515,8 +515,9 @@
     <div class="form-field">
       <label>อุณหภูมิ</label>
       <div class="tag-group" id="tempTags">
-        <button class="tag active" data-val="เย็น"><i data-lucide="snowflake"></i>เย็น</button>
-        <button class="tag" data-val="ปั่น"><i data-lucide="wind"></i>ปั่น</button>
+        <button class="tag active" data-val="เย็น" data-extra="0"><i data-lucide="snowflake"></i>เย็น</button>
+        <button class="tag" data-val="ปั่น" data-extra="0"><i data-lucide="wind"></i>ปั่น</button>
+        <button class="tag" data-val="แยกน้ำแข็ง" data-extra="5"><i data-lucide="glass-water"></i>แยกน้ำแข็ง <span style="font-size:0.72rem;opacity:0.8">+5฿</span></button>
       </div>
     </div>
     <div class="divider"></div>
@@ -589,7 +590,7 @@ const MENU = {
   ]
 };
 
-let cart = {}, sweet = "ปกติ", temp = "เย็น";
+let cart = {}, sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
 let currentCategory = "กาแฟ";
 
 // ===== SHOP STATE — simple polling every 3 seconds =====
@@ -708,7 +709,15 @@ function renderCart() {
       <span class="item-price">${sub} ฿</span>
     </div>`;
   }).join("");
-  box.innerHTML = rows + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum} ฿</span></div>`;
+  // คำนวณค่าแยกน้ำแข็ง
+  const iceExtra = tempExtra * qty;
+  const iceRow = iceExtra > 0 ? `<div class="cart-row" style="background:#fafafa">
+    <div class="cart-thumb-icon"><i data-lucide="glass-water"></i></div>
+    <span class="cart-item-name" style="color:var(--text-2)">แยกน้ำแข็ง ×${qty}</span>
+    <div class="qty-ctrl"></div>
+    <span class="item-price" style="color:var(--text-2)">+${iceExtra} ฿</span>
+  </div>` : '';
+  box.innerHTML = rows + iceRow + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum + iceExtra} ฿</span></div>`;
   updateFab(qty); lucide.createIcons();
 }
 function updateFab(q) {
@@ -724,7 +733,11 @@ function initTags() {
       document.querySelectorAll(`#${id} .tag`).forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       if (id === "sweetTags") sweet = btn.dataset.val;
-      else temp = btn.dataset.val;
+      else {
+        temp = btn.dataset.val;
+        tempExtra = parseInt(btn.dataset.extra) || 0;
+      }
+      renderCart(); // re-render ตะกร้าเพื่ออัปเดตราคา
     });
   });
 }
@@ -760,6 +773,14 @@ async function submitOrder() {
     total += subtotal;
     return { name: item.name, qty: cart[id], price: item.price };
   }).filter(x => x !== null);
+
+  // เพิ่มค่าแยกน้ำแข็ง
+  const totalQty = Object.values(cart).reduce((a,b) => a+b, 0);
+  const iceExtra = tempExtra * totalQty;
+  if (iceExtra > 0) {
+    items.push({ name: "แยกน้ำแข็ง", qty: totalQty, price: tempExtra });
+  }
+  total += iceExtra;
 
   const { data, error } = await sb.from("orders").insert([{
     name, phone, note, sweet, temp, location,
