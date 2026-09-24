@@ -177,6 +177,16 @@
     }
     .ftab.active .cnt { background: rgba(255,255,255,0.9); }
     .ftab .cnt.hidden { display: none; }
+    
+    /* badge แบบตัวเลข สำหรับ tab ทั้งหมด */
+    .ftab .cnt-num {
+      display: inline-block; background: var(--red);
+      color: #fff; font-size: 0.62rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 8px; margin-left: 3px;
+      vertical-align: middle;
+    }
+    .ftab.active .cnt-num { background: rgba(255,255,255,0.3); }
+    .ftab .cnt-num.hidden { display: none; }
 
     /* ===== ORDER CARD ===== */
     .order-card {
@@ -350,10 +360,10 @@
     <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
-    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt" id="cntAll"></span></button>
+    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt-num" id="cntAll">0</span></button>
     <button class="ftab"        id="ftab-pending"  onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
     <button class="ftab"        id="ftab-accepted" onclick="setFilter('accepted',this)">🔧 เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
-    <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ <span class="cnt hidden" id="cntReady"></span></button>
+    <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
   </div>
 
   <!-- ORDER LIST -->
@@ -626,17 +636,26 @@ function renderOrders() {
   document.getElementById("statPending").textContent = pending.length;
   document.getElementById("statRevenue").textContent = revenue;
 
-  // อัปเดต badge ทุก tab (จุดแดงเล็กๆ — ไม่มีตัวเลข)
-  function setBadge(id, count) {
+  // อัปเดต badge:
+  // - ทั้งหมด = ตัวเลข
+  // - รอรับ, เตรียม = จุดแดง
+  // - พร้อมรับ = ไม่มีอะไร
+  
+  const cntAllEl = document.getElementById("cntAll");
+  if (cntAllEl) {
+    cntAllEl.textContent = allOrders.length;
+    if (allOrders.length > 0) cntAllEl.classList.remove("hidden");
+    else cntAllEl.classList.add("hidden");
+  }
+  
+  function setDot(id, count) {
     const el = document.getElementById(id);
     if (!el) return;
-    if (count > 0) { el.classList.remove("hidden"); }
-    else { el.classList.add("hidden"); }
+    if (count > 0) el.classList.remove("hidden");
+    else el.classList.add("hidden");
   }
-  setBadge("cntAll",      allOrders.length);
-  setBadge("cntPending",  pending.length);
-  setBadge("cntAccepted", accepted.length);
-  setBadge("cntReady",    ready.length);
+  setDot("cntPending",  pending.length);
+  setDot("cntAccepted", accepted.length);
 
   // re-activate tab ที่ถูก filter อยู่ (realtime อาจ reset active class)
   document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
