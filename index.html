@@ -182,7 +182,6 @@
       border-radius: var(--radius);
       padding: 14px 14px 12px;
       margin-bottom: 10px;
-      animation: slideIn 0.2s ease;
       position: relative;
       overflow: hidden;
     }
@@ -192,7 +191,6 @@
     }
     .order-card.accepted::before { background: var(--green); }
     .order-card.ready::before    { background: var(--blue); }
-    @keyframes slideIn { from { transform: translateY(-6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
     .card-top {
       display: flex; align-items: center; gap: 8px;
@@ -575,10 +573,15 @@ function subscribeOrders() {
 }
 
 async function acceptOrder(id) {
+  // ซ่อน card ทันทีเพื่อ UX ดีขึ้น
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.3";
   await sb.from("orders").update({ status: "accepted" }).eq("id", id);
   await loadOrders();
 }
 async function readyOrder(id) {
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.3";
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
   await loadOrders();
 }
@@ -652,7 +655,7 @@ function renderOrders() {
   };
 
   list.innerHTML = filtered.map(o => `
-    <div class="order-card ${o.status}">
+    <div class="order-card ${o.status}" id="card-${o.id}">
       <div class="card-top">
         <span class="order-seq">#${String(o.order_seq || "").padStart(4,"0")}</span>
         <span class="order-name">${o.name}</span>
