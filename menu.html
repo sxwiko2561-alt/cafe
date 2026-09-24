@@ -172,6 +172,39 @@
     /* ===== MAIN ===== */
     main { max-width: 480px; margin: 0 auto; padding: 20px 16px 120px; }
 
+    /* ===== TABS ===== */
+    .tabs-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      background: var(--accent-light);
+      color: var(--text);
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
     .section-label {
       font-size: 0.72rem; font-weight: 600; color: var(--text-3);
       text-transform: uppercase; letter-spacing: 1px;
@@ -427,8 +460,15 @@
 </div>
 
 <main>
+  <!-- TABS -->
+  <div class="tabs-container">
+    <button class="tab-btn active" data-category="กาแฟ">☕ กาแฟ</button>
+    <button class="tab-btn" data-category="ชานม">🥤 ชานม</button>
+    <button class="tab-btn" data-category="มัทฉะ">🍵 มัทฉะ</button>
+  </div>
+
   <!-- MENU -->
-  <div class="section-label">เมนูวันนี้</div>
+  <div class="section-label" id="menuLabel">เมนูกาแฟ</div>
   <div class="menu-grid" id="menuGrid"></div>
 
   <!-- CART -->
@@ -508,12 +548,33 @@ const SUPA_URL = "https://lwzjleknmnnqwdqqivtz.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3empsZWtubW5ucXdkcXFpdnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTA0ODEsImV4cCI6MjEwNTcyNjQ4MX0.u-zr9TRWnP6DHrDMWUizh7_W6e9XF3otLQotBU-JUlk";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-const MENU = [
-  { id: 1, name: "มัทฉะสตอเบอร์รี่", price: 45, img: "images/matcha-latte.jpeg" },
-  { id: 2, name: "มัทฉะลาเต้",        price: 40, img: "images/matcha-strawberry.jpeg" },
-];
+const MENU = {
+  กาแฟ: [
+    { id: 1, name: "อเมริกาโน่เย็น", price: 35, img: "../เมนู coffee/กาแฟ/อเมริกาโน่เย็น 35บาท.png" },
+    { id: 2, name: "คาปูชิโน่", price: 40, img: "../เมนู coffee/กาแฟ/คาปูชิโน่ 40บาท.png" },
+    { id: 3, name: "คาราเมลมัคคิอาโต้", price: 40, img: "../เมนู coffee/กาแฟ/คาราเมลมัคคิอาโต้ 40บาท.png" },
+    { id: 4, name: "ลาเต้เย็น", price: 40, img: "../เมนู coffee/กาแฟ/ลาเต้เย็น 40บาท.png" },
+    { id: 5, name: "มอคค่า", price: 40, img: "../เมนู coffee/กาแฟ/มอคค่า 40บาท.png" },
+    { id: 6, name: "อเมริกาโน่มะพร้าว", price: 40, img: "../เมนู coffee/กาแฟ/อเมริกาโน่มะพร้าว 40บาท.png" },
+    { id: 7, name: "อเมริกาโน่ลิ้นจี่", price: 40, img: "../เมนู coffee/กาแฟ/อเมริกาโน่ลิ้นจี่ 40บาท.png" },
+    { id: 8, name: "อเมริกาโน่ส้ม", price: 40, img: "../เมนู coffee/กาแฟ/อเมริกาโน่ส้ม 40บาท.png" },
+    { id: 9, name: "เอสเปรสโซ่", price: 40, img: "../เมนู coffee/กาแฟ/เอสเปรสโซ่ 40บาท.png" },
+  ],
+  ชานม: [
+    { id: 101, name: "ชาไทยเย็น", price: 35, img: "" },
+    { id: 102, name: "ชาเขียวนม", price: 35, img: "" },
+    { id: 103, name: "ชาอูหลง", price: 40, img: "" },
+    { id: 104, name: "นมสด", price: 30, img: "" },
+  ],
+  มัทฉะ: [
+    { id: 201, name: "มัทฉะลาเต้", price: 40, img: "" },
+    { id: 202, name: "มัทฉะสตอเบอร์รี่", price: 45, img: "" },
+    { id: 203, name: "มัทฉะชาไทย", price: 45, img: "" },
+  ]
+};
 
 let cart = {}, sweet = "ปกติ", temp = "เย็น";
+let currentCategory = "กาแฟ";
 
 // ===== SHOP STATE — simple polling every 3 seconds =====
 async function pollShopState() {
@@ -546,12 +607,13 @@ setInterval(pollShopState, 3000);
 
 // ===== MENU =====
 function renderMenu() {
-  document.getElementById("menuGrid").innerHTML = MENU.map(item => `
+  const menuItems = MENU[currentCategory] || [];
+  document.getElementById("menuGrid").innerHTML = menuItems.map(item => `
     <div class="menu-card" onclick="addToCart(${item.id})">
       <div class="img-wrap">
-        <img src="${item.img}" alt="${item.name}"
-          onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>
-        <div class="icon-fallback" id="if-${item.id}" style="display:none">
+        ${item.img ? `<img src="${item.img}" alt="${item.name}"
+          onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
+        <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
           <i data-lucide="cup-soda"></i>
         </div>
         <span class="price-chip">${item.price} ฿</span>
@@ -564,6 +626,25 @@ function renderMenu() {
       </div>
     </div>`).join("");
   lucide.createIcons();
+}
+
+function switchCategory(category) {
+  currentCategory = category;
+  
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.category === category);
+  });
+  
+  // Update section label
+  const labels = {
+    'กาแฟ': 'เมนูกาแฟ',
+    'ชานม': 'เมนูชานม',
+    'มัทฉะ': 'เมนูมัทฉะ'
+  };
+  document.getElementById('menuLabel').textContent = labels[category] || 'เมนู';
+  
+  renderMenu();
 }
 
 // ===== CART =====
@@ -588,12 +669,20 @@ function renderCart() {
   }
   let sum = 0, qty = 0;
   const rows = keys.map(id => {
-    const item = MENU.find(m => m.id == id);
+    // Find item across all categories
+    let item = null;
+    for (let cat in MENU) {
+      item = MENU[cat].find(m => m.id == id);
+      if (item) break;
+    }
+    if (!item) return '';
+    
     const q = cart[id], sub = item.price * q;
     sum += sub; qty += q;
     return `<div class="cart-row">
-      <img class="cart-thumb" src="${item.img}" alt="${item.name}"
-        onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>
+      ${item.img ? `<img class="cart-thumb" src="${item.img}" alt="${item.name}"
+        onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>` 
+        : '<div class="cart-thumb-icon"><i data-lucide="cup-soda"></i></div>'}
       <span class="cart-item-name">${item.name}</span>
       <div class="qty-ctrl">
         <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
@@ -640,11 +729,21 @@ async function submitOrder() {
   const phone    = document.getElementById("custPhone").value.trim();
   const location = document.getElementById("custLocation").value.trim();
   const note     = document.getElementById("custNote").value.trim();
-  const total = Object.keys(cart).reduce((s,id) => s + MENU.find(m=>m.id==id).price*cart[id], 0);
+  
+  let total = 0;
   const items = Object.keys(cart).map(id => {
-    const item = MENU.find(m=>m.id==id);
+    // Find item across all categories
+    let item = null;
+    for (let cat in MENU) {
+      item = MENU[cat].find(m => m.id == id);
+      if (item) break;
+    }
+    if (!item) return null;
+    
+    const subtotal = item.price * cart[id];
+    total += subtotal;
     return { name: item.name, qty: cart[id], price: item.price };
-  });
+  }).filter(x => x !== null);
 
   const { data, error } = await sb.from("orders").insert([{
     name, phone, note, sweet, temp, location,
@@ -779,7 +878,15 @@ function scrollToCart() { document.getElementById("cartBox").scrollIntoView({ be
 
 // ===== INIT =====
 renderMenu(); renderCart(); initTags();
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchCategory(btn.dataset.category));
+});
+
 checkMyOrderStatus().then(() => { lastRenderedStatus = lastKnownStatus; subscribeMyOrder(); });
+requestNotifyPermission();
+</script>beMyOrder(); });
 requestNotifyPermission();
 lucide.createIcons();
 document.addEventListener("visibilitychange", () => {
