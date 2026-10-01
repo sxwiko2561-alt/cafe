@@ -321,6 +321,56 @@
     }
     .cart-total-row .total-val { font-size: 1rem; }
 
+    /* ===== LINE ITEM CART ===== */
+    .cart-item-opts { font-size: 0.72rem; color: var(--text-3); margin-top: 2px; }
+    .btn-remove {
+      width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+      background: #fee2e2; border: none; cursor: pointer; color: #ef4444;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      transition: background 0.15s;
+    }
+    .btn-remove:hover { background: #fecaca; }
+
+    /* ===== OPTION MODAL ===== */
+    .opt-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 150;
+      align-items: flex-end; justify-content: center;
+    }
+    .opt-modal-overlay.show { display: flex; }
+    .opt-modal {
+      background: var(--surface); border-radius: 24px 24px 0 0;
+      padding: 24px 20px 36px; width: 100%; max-width: 480px;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); } to { transform: translateY(0); }
+    }
+    .opt-modal-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    }
+    .opt-modal-img {
+      width: 52px; height: 52px; border-radius: 12px;
+      object-fit: cover; background: #f5f5f5;
+    }
+    .opt-modal-img-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: #f5f5f5; display: flex; align-items: center; justify-content: center;
+    }
+    .opt-modal-img-icon svg { width: 24px; height: 24px; stroke: #ccc; }
+    .opt-modal-name { font-size: 1rem; font-weight: 600; }
+    .opt-modal-price { font-size: 0.82rem; color: var(--text-2); margin-top: 2px; }
+    .opt-section-label {
+      font-size: 0.72rem; font-weight: 600; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+    }
+    .opt-section { margin-bottom: 18px; }
+    .btn-add-to-cart {
+      width: 100%; padding: 14px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm); font-size: 0.92rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; margin-top: 4px;
+    }
+
     /* ===== FORM ===== */
     .form-box {
       background: var(--surface);
@@ -504,24 +554,6 @@
     </div>
     <div class="divider"></div>
     <div class="form-field">
-      <label>ความหวาน</label>
-      <div class="tag-group" id="sweetTags">
-        <button class="tag active" data-val="ปกติ">ปกติ</button>
-        <button class="tag" data-val="หวานน้อย">หวานน้อย</button>
-        <button class="tag" data-val="หวานน้อยมาก">หวานน้อยมาก</button>
-        <button class="tag" data-val="ไม่หวาน">ไม่หวาน</button>
-      </div>
-    </div>
-    <div class="form-field">
-      <label>อุณหภูมิ</label>
-      <div class="tag-group" id="tempTags">
-        <button class="tag active" data-val="เย็น" data-extra="0"><i data-lucide="snowflake"></i>เย็น</button>
-        <button class="tag" data-val="ปั่น" data-extra="0"><i data-lucide="wind"></i>ปั่น</button>
-        <button class="tag" data-val="แยกน้ำแข็ง" data-extra="5"><i data-lucide="glass-water"></i>แยกน้ำแข็ง <span style="font-size:0.72rem;opacity:0.8">+5฿</span></button>
-      </div>
-    </div>
-    <div class="divider"></div>
-    <div class="form-field">
       <label>หมายเหตุ</label>
       <textarea id="custNote" placeholder="เช่น ไม่ใส่น้ำแข็ง, นมข้น..."></textarea>
     </div>
@@ -537,6 +569,38 @@
     <img src="images/corgi.jpg" alt="corgi" style="width:70%;height:70%;object-fit:contain;border-radius:0;" />
   </button>
   <span class="fab-badge hidden" id="fabBadge">0</span>
+</div>
+
+<!-- OPTION MODAL -->
+<div class="opt-modal-overlay" id="optModalOverlay" onclick="closeOptModal(event)">
+  <div class="opt-modal">
+    <div class="opt-modal-header">
+      <img class="opt-modal-img" id="optModalImg" src="" alt="" onerror="this.style.display='none';document.getElementById('optModalImgIcon').style.display='flex'"/>
+      <div class="opt-modal-img-icon" id="optModalImgIcon" style="display:none"><i data-lucide="cup-soda"></i></div>
+      <div>
+        <div class="opt-modal-name" id="optModalName"></div>
+        <div class="opt-modal-price" id="optModalPrice"></div>
+      </div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-section-label">ความหวาน</div>
+      <div class="tag-group" id="optSweetTags">
+        <button class="tag active" data-val="75%">75%</button>
+        <button class="tag" data-val="50%">50%</button>
+        <button class="tag" data-val="25%">25%</button>
+        <button class="tag" data-val="0%">0%</button>
+      </div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-section-label">อุณหภูมิ</div>
+      <div class="tag-group" id="optTempTags">
+        <button class="tag active" data-val="เย็น"><i data-lucide="snowflake"></i>เย็น</button>
+        <button class="tag" data-val="ปั่น"><i data-lucide="wind"></i>ปั่น</button>
+        <button class="tag" data-val="ร้อน"><i data-lucide="flame"></i>ร้อน</button>
+      </div>
+    </div>
+    <button class="btn-add-to-cart" onclick="confirmAddToCart()">เพิ่มลงตะกร้า</button>
+  </div>
 </div>
 
 <!-- SUCCESS MODAL -->
@@ -590,8 +654,10 @@ const MENU = {
   ]
 };
 
-let cart = {}, sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
+let cart = [], sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
 let currentCategory = "กาแฟ";
+let optModalItem = null; // เมนูที่กำลังเลือก option อยู่
+let optSweet = "75%", optTemp = "เย็น";
 
 // ===== SHOP STATE — simple polling every 3 seconds =====
 async function pollShopState() {
@@ -666,81 +732,110 @@ function switchCategory(category) {
   renderMenu();
 }
 
-// ===== CART =====
+// ===== OPTION MODAL =====
+function findItem(id) {
+  for (let cat in MENU) {
+    const item = MENU[cat].find(m => m.id == id);
+    if (item) return item;
+  }
+  return null;
+}
+
 function addToCart(id) {
-  cart[id] = (cart[id] || 0) + 1;
+  const item = findItem(id);
+  if (!item) return;
+  optModalItem = item;
+  optSweet = "75%"; optTemp = "เย็น";
+
+  // reset modal UI
+  const imgEl = document.getElementById("optModalImg");
+  const iconEl = document.getElementById("optModalImgIcon");
+  if (item.img) {
+    imgEl.src = item.img; imgEl.style.display = "";
+    iconEl.style.display = "none";
+  } else {
+    imgEl.style.display = "none"; iconEl.style.display = "flex";
+  }
+  document.getElementById("optModalName").textContent  = item.name;
+  document.getElementById("optModalPrice").textContent = item.price + " ฿";
+
+  document.querySelectorAll("#optSweetTags .tag").forEach((b,i) => b.classList.toggle("active", i===0));
+  document.querySelectorAll("#optTempTags .tag").forEach((b,i)  => b.classList.toggle("active", i===0));
+
+  document.getElementById("optModalOverlay").classList.add("show");
+  lucide.createIcons();
+}
+
+function closeOptModal(e) {
+  if (!e || e.target === document.getElementById("optModalOverlay"))
+    document.getElementById("optModalOverlay").classList.remove("show");
+}
+
+function confirmAddToCart() {
+  if (!optModalItem) return;
+  cart.push({
+    lineId: Date.now() + Math.random(),
+    menuId: optModalItem.id,
+    name:   optModalItem.name,
+    price:  optModalItem.price,
+    img:    optModalItem.img,
+    sweet:  optSweet,
+    temp:   optTemp,
+  });
+  document.getElementById("optModalOverlay").classList.remove("show");
   renderCart();
   const fab = document.querySelector(".fab");
   fab.style.transform = "scale(1.2)";
   setTimeout(() => fab.style.transform = "", 180);
 }
-function changeQty(id, d) {
-  cart[id] = (cart[id] || 0) + d;
-  if (cart[id] <= 0) delete cart[id];
+
+function removeLineItem(lineId) {
+  cart = cart.filter(l => l.lineId !== lineId);
   renderCart();
 }
+
+// ===== CART =====
 function renderCart() {
-  const box  = document.getElementById("cartBox");
-  const keys = Object.keys(cart);
-  if (!keys.length) {
+  const box = document.getElementById("cartBox");
+  if (!cart.length) {
     box.innerHTML = `<div class="cart-empty-state"><i data-lucide="shopping-bag"></i>ยังไม่มีรายการ</div>`;
     updateFab(0); lucide.createIcons(); return;
   }
-  let sum = 0, qty = 0;
-  const rows = keys.map(id => {
-    // Find item across all categories
-    let item = null;
-    for (let cat in MENU) {
-      item = MENU[cat].find(m => m.id == id);
-      if (item) break;
-    }
-    if (!item) return '';
-    
-    const q = cart[id], sub = item.price * q;
-    sum += sub; qty += q;
+  let sum = 0;
+  const rows = cart.map(line => {
+    sum += line.price;
     return `<div class="cart-row">
-      ${item.img ? `<img class="cart-thumb" src="${item.img}" alt="${item.name}"
-        onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>` 
+      ${line.img
+        ? `<img class="cart-thumb" src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>`
         : '<div class="cart-thumb-icon"><i data-lucide="cup-soda"></i></div>'}
-      <span class="cart-item-name">${item.name}</span>
-      <div class="qty-ctrl">
-        <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
-        <span class="qty-num">${q}</span>
-        <button class="qty-btn" onclick="changeQty(${id},+1)">+</button>
+      <div style="flex:1;min-width:0">
+        <div class="cart-item-name">${line.name}</div>
+        <div class="cart-item-opts">${line.sweet} · ${line.temp}</div>
       </div>
-      <span class="item-price">${sub} ฿</span>
+      <span class="item-price">${line.price} ฿</span>
+      <button class="btn-remove" onclick="removeLineItem(${line.lineId})">×</button>
     </div>`;
   }).join("");
-  // คำนวณค่าแยกน้ำแข็ง
-  const iceExtra = tempExtra * qty;
-  const iceRow = iceExtra > 0 ? `<div class="cart-row" style="background:#fafafa">
-    <div class="cart-thumb-icon"><i data-lucide="glass-water"></i></div>
-    <span class="cart-item-name" style="color:var(--text-2)">แยกน้ำแข็ง ×${qty}</span>
-    <div class="qty-ctrl"></div>
-    <span class="item-price" style="color:var(--text-2)">+${iceExtra} ฿</span>
-  </div>` : '';
-  box.innerHTML = rows + iceRow + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum + iceExtra} ฿</span></div>`;
-  updateFab(qty); lucide.createIcons();
+  box.innerHTML = rows + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum} ฿</span></div>`;
+  updateFab(cart.length); lucide.createIcons();
 }
+
 function updateFab(q) {
   const b = document.getElementById("fabBadge");
   q > 0 ? (b.textContent = q, b.classList.remove("hidden")) : b.classList.add("hidden");
 }
 
-// ===== TAGS =====
+// ===== OPT MODAL TAGS =====
 function initTags() {
-  ["sweetTags","tempTags"].forEach(id => {
-    document.getElementById(id).addEventListener("click", e => {
-      const btn = e.target.closest(".tag"); if (!btn) return;
-      document.querySelectorAll(`#${id} .tag`).forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      if (id === "sweetTags") sweet = btn.dataset.val;
-      else {
-        temp = btn.dataset.val;
-        tempExtra = parseInt(btn.dataset.extra) || 0;
-      }
-      renderCart(); // re-render ตะกร้าเพื่ออัปเดตราคา
-    });
+  document.getElementById("optSweetTags").addEventListener("click", e => {
+    const btn = e.target.closest(".tag"); if (!btn) return;
+    document.querySelectorAll("#optSweetTags .tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active"); optSweet = btn.dataset.val;
+  });
+  document.getElementById("optTempTags").addEventListener("click", e => {
+    const btn = e.target.closest(".tag"); if (!btn) return;
+    document.querySelectorAll("#optTempTags .tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active"); optTemp = btn.dataset.val;
   });
 }
 
@@ -753,39 +848,22 @@ async function submitOrder() {
 
   const name = document.getElementById("custName").value.trim();
   if (!name) { document.getElementById("custName").focus(); return; }
-  if (!Object.keys(cart).length) return;
+  if (!cart.length) return;
 
   const btn = document.getElementById("btnOrder");
   btn.disabled = true;
   const phone    = document.getElementById("custPhone").value.trim();
   const location = document.getElementById("custLocation").value.trim();
   const note     = document.getElementById("custNote").value.trim();
-  
-  let total = 0;
-  const items = Object.keys(cart).map(id => {
-    // Find item across all categories
-    let item = null;
-    for (let cat in MENU) {
-      item = MENU[cat].find(m => m.id == id);
-      if (item) break;
-    }
-    if (!item) return null;
-    
-    const subtotal = item.price * cart[id];
-    total += subtotal;
-    return { name: item.name, qty: cart[id], price: item.price };
-  }).filter(x => x !== null);
 
-  // เพิ่มค่าแยกน้ำแข็ง
-  const totalQty = Object.values(cart).reduce((a,b) => a+b, 0);
-  const iceExtra = tempExtra * totalQty;
-  if (iceExtra > 0) {
-    items.push({ name: "แยกน้ำแข็ง", qty: totalQty, price: tempExtra });
-  }
-  total += iceExtra;
+  const total = cart.reduce((s, l) => s + l.price, 0);
+  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp }));
+  const sweetDisplay = [...new Set(cart.map(l => l.sweet))].join(", ");
+  const tempDisplay  = [...new Set(cart.map(l => l.temp))].join(", ");
 
   const { data, error } = await sb.from("orders").insert([{
-    name, phone, note, sweet, temp, location,
+    name, phone, note,
+    sweet: sweetDisplay, temp: tempDisplay, location,
     items: JSON.stringify(items), total,
     status: "pending", timestamp: Date.now()
   }]).select().single();
@@ -797,24 +875,24 @@ async function submitOrder() {
   localStorage.setItem("myOrderStatus", "pending");
   lastKnownStatus = "pending"; lastRenderedStatus = "";
 
-  cart = {}; renderCart();
+  cart = []; renderCart();
   document.getElementById("custName").value     = "";
   document.getElementById("custLocation").value = "";
   document.getElementById("custPhone").value    = "";
   document.getElementById("custNote").value     = "";
 
   document.getElementById("modalOrderId").textContent = `#${String(data.order_seq).padStart(4,"0")}`;
-  document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} ×${i.qty}`).join(", ") + `<br>ความหวาน: ${sweet} · ${temp}`;
+  document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} (${i.sweet}·${i.temp})`).join("<br>");
   document.getElementById("modalOverlay").classList.add("show");
 
   subscribeMyOrder();
 }
 
 // ===== ORDER TRACKER =====
-const STATUS_ICON  = { pending:"clock", accepted:"chef-hat", ready:"package-check" };
-const STATUS_LABEL = { pending:"รอการยืนยัน", accepted:"กำลังเตรียม", ready:"พร้อมรับแล้ว!" };
+const STATUS_ICON  = { pending:"clock", accepted:"chef-hat", ready:"package-check", cancelled:"x-circle" };
+const STATUS_LABEL = { pending:"รอการยืนยัน", accepted:"กำลังเตรียม", ready:"พร้อมรับแล้ว!", cancelled:"ออเดอร์ถูกยกเลิก" };
 const STATUS_STEPS = ["สั่งแล้ว","ยืนยัน","พร้อมรับ"];
-const STATUS_STEP_NUM = { pending:0, accepted:1, ready:2 };
+const STATUS_STEP_NUM = { pending:0, accepted:1, ready:2, cancelled:0 };
 
 let lastKnownStatus   = localStorage.getItem("myOrderStatus") || "";
 let lastRenderedStatus = "";
@@ -835,6 +913,26 @@ function renderOrderBar(order) {
   `).join("");
 
   bar.style.display = "block";
+
+  // cancelled — แสดง card พิเศษ
+  if (st === "cancelled") {
+    bar.innerHTML = `
+      <div class="order-status-card" style="border:1.5px solid #fecaca;background:#fff5f5">
+        <div class="osc-top">
+          <div class="osc-icon-wrap" style="background:#fee2e2"><i data-lucide="x-circle" style="stroke:#ef4444"></i></div>
+          <div>
+            <div class="osc-title" style="color:#ef4444">ออเดอร์ถูกยกเลิก</div>
+            <div class="osc-sub">ออเดอร์ #${String(order.order_seq || order.id).padStart(4,"0")} · ${order.name}</div>
+          </div>
+        </div>
+        <p style="font-size:0.82rem;color:#ef4444;margin-bottom:12px">ขออภัย ทางร้านไม่สามารถดำเนินการออเดอร์นี้ได้</p>
+        <button class="btn-new-order" style="background:#ef4444" onclick="clearMyOrder()">ปิด — สั่งใหม่</button>
+      </div>`;
+    lucide.createIcons();
+    playCancel();
+    return;
+  }
+
   bar.innerHTML = `
     <div class="order-status-card">
       <div class="osc-top">
@@ -918,6 +1016,23 @@ function playNotify() {
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.3);
       o.start(ctx.currentTime + i*0.15);
       o.stop(ctx.currentTime + i*0.15 + 0.3);
+    });
+  } catch(e) {}
+}
+
+function playCancel() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // เสียงลงต่ำ 3 โน้ต แบบบอกว่าโดนยกเลิก
+    [440, 349, 261].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sawtooth";
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.2 + 0.35);
+      o.start(ctx.currentTime + i * 0.2);
+      o.stop(ctx.currentTime + i * 0.2 + 0.35);
     });
   } catch(e) {}
 }

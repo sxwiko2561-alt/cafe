@@ -456,10 +456,10 @@
     <div class="form-field">
       <label>ความหวาน</label>
       <div class="tag-group" id="sweetTags">
-        <button class="tag active" data-val="ปกติ">ปกติ</button>
-        <button class="tag" data-val="หวานน้อย">หวานน้อย</button>
-        <button class="tag" data-val="หวานน้อยมาก">หวานน้อยมาก</button>
-        <button class="tag" data-val="ไม่หวาน">ไม่หวาน</button>
+        <button class="tag active" data-val="75%">75%</button>
+        <button class="tag" data-val="50%">50%</button>
+        <button class="tag" data-val="25%">25%</button>
+        <button class="tag" data-val="0%">0%</button>
       </div>
     </div>
     <div class="form-field">
@@ -473,7 +473,7 @@
     <div class="divider"></div>
     <div class="form-field">
       <label>หมายเหตุ</label>
-      <textarea id="custNote" placeholder="เช่น ไม่ใส่น้ำแข็ง, นมข้น..."></textarea>
+      <textarea id="custNote" placeholder="เช่น ไม่ใส่น้ำแข็ง, นมข้น ,โกโก้ไม่ใส่นม , มัทฉะไม่ใส่น้ำเชื่อม"></textarea>
     </div>
     <button class="btn-submit" id="btnOrder" onclick="submitOrder()">
       <i data-lucide="arrow-right"></i> สั่งเลย
@@ -511,7 +511,7 @@ const MENU = [
   { id: 2, name: "มัทฉะลาเต้",        price: 40, img: "images/matcha-strawberry.jpeg" },
 ];
 
-let cart = {}, sweet = "ปกติ", temp = "เย็น";
+let cart = {}, sweet = "75%", temp = "เย็น";
 
 // ===== SHOP STATE =====
 async function loadShopState() {

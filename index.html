@@ -364,6 +364,7 @@
     <button class="ftab"        id="ftab-pending"  onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
     <button class="ftab"        id="ftab-accepted" onclick="setFilter('accepted',this)">🔧 เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
     <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
+    <button class="ftab"        id="ftab-cancelled" onclick="setFilter('cancelled',this)">❌ ยกเลิก</button>
   </div>
 
   <!-- ORDER LIST -->
@@ -598,6 +599,13 @@ async function readyOrder(id) {
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
   await loadOrders();
 }
+async function cancelOrder(id) {
+  if (!confirm("ยืนยันการยกเลิกออเดอร์นี้?")) return;
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.3";
+  await sb.from("orders").update({ status: "cancelled" }).eq("id", id);
+  await loadOrders();
+}
 async function clearDone() {
   await sb.from("orders").delete().eq("status", "ready");
   loadOrders();
@@ -611,7 +619,10 @@ function setFilter(f, el) {
 }
 
 function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const d = new Date(ts);
+  const date = d.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+  const time = d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  return `${date} ${time}`;
 }
 
 function locationBadge(loc) {
@@ -627,12 +638,13 @@ function locationBadge(loc) {
 }
 
 function renderOrders() {
-  const pending  = allOrders.filter(o => o.status === "pending");
-  const accepted = allOrders.filter(o => o.status === "accepted");
-  const ready    = allOrders.filter(o => o.status === "ready");
-  const revenue  = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const pending   = allOrders.filter(o => o.status === "pending");
+  const accepted  = allOrders.filter(o => o.status === "accepted");
+  const ready     = allOrders.filter(o => o.status === "ready");
+  const active    = allOrders.filter(o => o.status !== "cancelled");
+  const revenue   = active.reduce((s, o) => s + (o.total || 0), 0);
 
-  document.getElementById("statTotal").textContent   = allOrders.length;
+  document.getElementById("statTotal").textContent   = active.length;
   document.getElementById("statPending").textContent = pending.length;
   document.getElementById("statRevenue").textContent = revenue;
 
@@ -643,8 +655,9 @@ function renderOrders() {
   
   const cntAllEl = document.getElementById("cntAll");
   if (cntAllEl) {
-    cntAllEl.textContent = allOrders.length;
-    if (allOrders.length > 0) cntAllEl.classList.remove("hidden");
+    const activeCount = pending.length + accepted.length;
+    cntAllEl.textContent = activeCount;
+    if (activeCount > 0) cntAllEl.classList.remove("hidden");
     else cntAllEl.classList.add("hidden");
   }
   
@@ -662,7 +675,9 @@ function renderOrders() {
   const activeTab = document.getElementById("ftab-" + (currentFilter === "all" ? "all" : currentFilter));
   if (activeTab) activeTab.classList.add("active");
 
-  const filtered = currentFilter === "all" ? allOrders : allOrders.filter(o => o.status === currentFilter);
+  const filtered = currentFilter === "all"
+    ? allOrders.filter(o => o.status !== "ready" && o.status !== "cancelled")
+    : allOrders.filter(o => o.status === currentFilter);
   const list = document.getElementById("orderList");
 
   if (filtered.length === 0) {
@@ -671,9 +686,10 @@ function renderOrders() {
   }
 
   const statusChip = {
-    pending:  `<span class="status-chip pending">⏳ รอรับออเดอร์</span>`,
-    accepted: `<span class="status-chip accepted">🔧 กำลังเตรียม</span>`,
-    ready:    `<span class="status-chip ready">✅ พร้อมรับแล้ว</span>`,
+    pending:   `<span class="status-chip pending">⏳ รอรับออเดอร์</span>`,
+    accepted:  `<span class="status-chip accepted">🔧 กำลังเตรียม</span>`,
+    ready:     `<span class="status-chip ready">✅ พร้อมรับแล้ว</span>`,
+    cancelled: `<span class="status-chip" style="background:#fee2e2;color:#ef4444">❌ ยกเลิกแล้ว</span>`,
   };
 
   list.innerHTML = filtered.map(o => `
@@ -688,12 +704,10 @@ function renderOrders() {
       ${locationBadge(o.location)}
 
       <div class="order-items">
-        ${o.items.map(i => `<span>${i.name}</span> ×${i.qty}`).join(" &nbsp;·&nbsp; ")}
+        ${o.items.map(i => `<span>${i.name}</span> <span style="font-size:0.75rem;color:#e53935;font-weight:600">${i.sweet||''} ${i.temp||''}</span>`).join("<br>")}
       </div>
 
       <div class="meta-row">
-        <span class="meta-tag">🍬 ${o.sweet}</span>
-        <span class="meta-tag">🧊 ${o.temp}</span>
         ${o.note ? `<span class="meta-tag note">📌 ${o.note}</span>` : ""}
       </div>
 
@@ -705,6 +719,7 @@ function renderOrders() {
       <div class="action-row">
         ${o.status === "pending"  ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">✓ รับออเดอร์</button>` : ""}
         ${o.status === "accepted" ? `<button class="btn-action ready"  onclick="readyOrder('${o.id}')">🛍️ พร้อมแล้ว</button>` : ""}
+        ${o.status !== "ready" && o.status !== "cancelled" ? `<button class="btn-action" style="background:#fee2e2;color:#ef4444;border:1.5px solid #fecaca" onclick="cancelOrder('${o.id}')">✕ ยกเลิก</button>` : ""}
       </div>
     </div>
   `).join("");
