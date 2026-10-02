@@ -360,10 +360,9 @@
     <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
-    <button class="ftab active" id="ftab-all"      onclick="setFilter('all',this)">ทั้งหมด <span class="cnt-num" id="cntAll">0</span></button>
-    <button class="ftab"        id="ftab-pending"  onclick="setFilter('pending',this)">⏳ รอรับ <span class="cnt hidden" id="cntPending"></span></button>
-    <button class="ftab"        id="ftab-accepted" onclick="setFilter('accepted',this)">🔧 เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
-    <button class="ftab"        id="ftab-ready"    onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
+    <button class="ftab active" id="ftab-all"       onclick="setFilter('all',this)">ทั้งหมด <span class="cnt-num" id="cntAll">0</span></button>
+    <button class="ftab"        id="ftab-accepted"  onclick="setFilter('accepted',this)">⏱ เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
+    <button class="ftab"        id="ftab-ready"     onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
     <button class="ftab"        id="ftab-cancelled" onclick="setFilter('cancelled',this)">❌ ยกเลิก</button>
   </div>
 
@@ -655,7 +654,7 @@ function renderOrders() {
   
   const cntAllEl = document.getElementById("cntAll");
   if (cntAllEl) {
-    const activeCount = pending.length + accepted.length;
+    const activeCount = pending.length;
     cntAllEl.textContent = activeCount;
     if (activeCount > 0) cntAllEl.classList.remove("hidden");
     else cntAllEl.classList.add("hidden");
@@ -676,7 +675,7 @@ function renderOrders() {
   if (activeTab) activeTab.classList.add("active");
 
   const filtered = currentFilter === "all"
-    ? allOrders.filter(o => o.status !== "ready" && o.status !== "cancelled")
+    ? allOrders.filter(o => o.status === "pending")
     : allOrders.filter(o => o.status === currentFilter);
   const list = document.getElementById("orderList");
 
@@ -687,7 +686,7 @@ function renderOrders() {
 
   const statusChip = {
     pending:   `<span class="status-chip pending">⏳ รอรับออเดอร์</span>`,
-    accepted:  `<span class="status-chip accepted">🔧 กำลังเตรียม</span>`,
+    accepted:  `<span class="status-chip accepted">⏱ กำลังเตรียม</span>`,
     ready:     `<span class="status-chip ready">✅ พร้อมรับแล้ว</span>`,
     cancelled: `<span class="status-chip" style="background:#fee2e2;color:#ef4444">❌ ยกเลิกแล้ว</span>`,
   };
