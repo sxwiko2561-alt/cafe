@@ -703,7 +703,7 @@ function renderOrders() {
       ${locationBadge(o.location)}
 
       <div class="order-items">
-        ${o.items.map(i => `<span>${i.name}</span> <span style="font-size:0.75rem;color:#e53935;font-weight:600">${i.sweet||''} ${i.temp||''}</span>`).join("<br>")}
+        ${o.items.map(i => `<span>${i.name}</span> <span style="font-size:0.75rem;color:#e53935;font-weight:600">${i.sweet||''} ${i.temp||''}${i.extras && i.extras.length ? ' · ' + i.extras.join(' · ') : ''}</span>`).join("<br>")}
       </div>
 
       <div class="meta-row">

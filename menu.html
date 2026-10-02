@@ -594,8 +594,15 @@
     <div class="opt-section">
       <div class="opt-section-label">อุณหภูมิ</div>
       <div class="tag-group" id="optTempTags">
-        <button class="tag active" data-val="เย็น"><i data-lucide="snowflake"></i>เย็น</button>
-        <button class="tag" data-val="ปั่น"><i data-lucide="wind"></i>ปั่น</button>
+        <button class="tag active" data-val="เย็น" data-extra="0"><i data-lucide="snowflake"></i>เย็น</button>
+        <button class="tag" data-val="ปั่น" data-extra="5"><i data-lucide="wind"></i>ปั่น <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
+      </div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-section-label">เพิ่มเติม</div>
+      <div class="tag-group" id="optExtraTags">
+        <button class="tag" data-val="แยกน้ำแข็ง" data-extra="5"><i data-lucide="glass-water"></i>แยกน้ำแข็ง <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
+        <button class="tag" data-val="เพิ่มช็อต" data-extra="20"><i data-lucide="zap"></i>เพิ่มช็อต <span style="font-size:0.72rem;opacity:0.7">+20฿</span></button>
       </div>
     </div>
     <button class="btn-add-to-cart" onclick="confirmAddToCart()">เพิ่มลงตะกร้า</button>
@@ -655,8 +662,8 @@ const MENU = {
 
 let cart = [], sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
 let currentCategory = "กาแฟ";
-let optModalItem = null; // เมนูที่กำลังเลือก option อยู่
-let optSweet = "75%", optTemp = "เย็น";
+let optModalItem = null;
+let optSweet = "75%", optTemp = "เย็น", optTempExtra = 0, optExtras = [];
 
 // ===== SHOP STATE — simple polling every 3 seconds =====
 async function pollShopState() {
@@ -744,7 +751,7 @@ function addToCart(id) {
   const item = findItem(id);
   if (!item) return;
   optModalItem = item;
-  optSweet = "75%"; optTemp = "เย็น";
+  optSweet = "75%"; optTemp = "เย็น"; optTempExtra = 0; optExtras = [];
 
   // reset modal UI
   const imgEl = document.getElementById("optModalImg");
@@ -760,6 +767,7 @@ function addToCart(id) {
 
   document.querySelectorAll("#optSweetTags .tag").forEach((b,i) => b.classList.toggle("active", i===0));
   document.querySelectorAll("#optTempTags .tag").forEach((b,i)  => b.classList.toggle("active", i===0));
+  document.querySelectorAll("#optExtraTags .tag").forEach(b => b.classList.remove("active"));
 
   document.getElementById("optModalOverlay").classList.add("show");
   lucide.createIcons();
@@ -772,14 +780,17 @@ function closeOptModal(e) {
 
 function confirmAddToCart() {
   if (!optModalItem) return;
+  const extraPrice = optTempExtra + optExtras.reduce((s, e) => s + e.price, 0);
+  const extraNames = optExtras.map(e => e.name);
   cart.push({
     lineId: Date.now() + Math.random(),
     menuId: optModalItem.id,
     name:   optModalItem.name,
-    price:  optModalItem.price,
+    price:  optModalItem.price + extraPrice,
     img:    optModalItem.img,
     sweet:  optSweet,
     temp:   optTemp,
+    extras: extraNames,
   });
   document.getElementById("optModalOverlay").classList.remove("show");
   renderCart();
@@ -809,7 +820,7 @@ function renderCart() {
         : '<div class="cart-thumb-icon"><i data-lucide="cup-soda"></i></div>'}
       <div style="flex:1;min-width:0">
         <div class="cart-item-name">${line.name}</div>
-        <div class="cart-item-opts">${line.sweet} · ${line.temp}</div>
+        <div class="cart-item-opts">${line.sweet} · ${line.temp}${line.extras && line.extras.length ? ' · ' + line.extras.join(' · ') : ''}</div>
       </div>
       <span class="item-price">${line.price} ฿</span>
       <button class="btn-remove" onclick="removeLineItem(${line.lineId})">×</button>
@@ -834,8 +845,68 @@ function initTags() {
   document.getElementById("optTempTags").addEventListener("click", e => {
     const btn = e.target.closest(".tag"); if (!btn) return;
     document.querySelectorAll("#optTempTags .tag").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active"); optTemp = btn.dataset.val;
+    btn.classList.add("active");
+    optTemp = btn.dataset.val;
+    optTempExtra = parseInt(btn.dataset.extra) || 0;
   });
+  document.getElementById("optExtraTags").addEventListener("click", e => {
+    const btn = e.target.closest(".tag"); if (!btn) return;
+    btn.classList.toggle("active");
+    const val = btn.dataset.val;
+    const price = parseInt(btn.dataset.extra) || 0;
+    if (btn.classList.contains("active")) {
+      optExtras.push({ name: val, price });
+    } else {
+      optExtras = optExtras.filter(x => x.name !== val);
+    }
+  });
+}
+
+// ===== ADD MORE TO EXISTING ORDER =====
+let isAddingMore = false;
+
+function addMoreToOrder() {
+  isAddingMore = true;
+  // scroll ลงไปที่เมนู
+  document.querySelector("main").scrollIntoView({ behavior: "smooth", block: "start" });
+  // แสดง banner แจ้งว่ากำลังสั่งเพิ่ม
+  const bar = document.getElementById("myOrderBar");
+  const banner = document.getElementById("addMoreBanner");
+  if (!banner) {
+    const div = document.createElement("div");
+    div.id = "addMoreBanner";
+    div.style.cssText = "background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;padding:10px 14px;font-size:0.82rem;color:#92400e;margin:0 16px 12px;display:flex;align-items:center;justify-content:space-between;";
+    div.innerHTML = `<span>⚠️ กำลังสั่งเพิ่มในออเดอร์เดิม</span><button onclick="cancelAddMore()" style="background:none;border:none;color:#92400e;font-size:0.82rem;cursor:pointer;font-weight:600">ยกเลิก</button>`;
+    bar.after(div);
+  }
+  // เปลี่ยนปุ่มส่งออเดอร์
+  const btnOrder = document.getElementById("btnOrder");
+  btnOrder.textContent = "เพิ่มในออเดอร์เดิม";
+}
+
+function cancelAddMore() {
+  isAddingMore = false;
+  cart = []; renderCart();
+  const banner = document.getElementById("addMoreBanner");
+  if (banner) banner.remove();
+  const btnOrder = document.getElementById("btnOrder");
+  btnOrder.innerHTML = '<i data-lucide="arrow-right"></i> สั่งเลย';
+  lucide.createIcons();
+}
+
+async function submitAddMore(myId, newItems, newTotal) {
+  // ดึง order เดิมมา
+  const { data: existing } = await sb.from("orders").select("items,total").eq("id", myId).single();
+  if (!existing) return false;
+  const oldItems = typeof existing.items === "string" ? JSON.parse(existing.items) : existing.items;
+  const mergedItems = [...oldItems, ...newItems];
+  const mergedTotal = (existing.total || 0) + newTotal;
+
+  const { error } = await sb.from("orders").update({
+    items: JSON.stringify(mergedItems),
+    total: mergedTotal
+  }).eq("id", myId);
+  return !error;
 }
 
 // ===== SUBMIT =====
@@ -856,9 +927,21 @@ async function submitOrder() {
   const note     = document.getElementById("custNote").value.trim();
 
   const total = cart.reduce((s, l) => s + l.price, 0);
-  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp }));
+  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp, extras: l.extras || [] }));
   const sweetDisplay = [...new Set(cart.map(l => l.sweet))].join(", ");
   const tempDisplay  = [...new Set(cart.map(l => l.temp))].join(", ");
+
+  // ===== สั่งเพิ่มในออเดอร์เดิม =====
+  if (isAddingMore) {
+    const myId = localStorage.getItem("myOrderId");
+    if (!myId) { btn.disabled = false; return; }
+    const ok = await submitAddMore(myId, items, total);
+    btn.disabled = false;
+    if (!ok) { alert("เกิดข้อผิดพลาด"); return; }
+    cart = []; renderCart();
+    cancelAddMore();
+    return;
+  }
 
   const { data, error } = await sb.from("orders").insert([{
     name, phone, note,
@@ -943,6 +1026,7 @@ function renderOrderBar(order) {
       </div>
       <div class="step-bar">${stepHTML}</div>
       ${st === "ready" ? `<button class="btn-new-order" onclick="clearMyOrder()">รับของแล้ว — สั่งใหม่</button>` : ""}
+      ${st === "pending" ? `<button class="btn-new-order" style="background:#1a1a1a;margin-top:8px" onclick="addMoreToOrder()">+ สั่งเพิ่ม</button>` : ""}
     </div>`;
   lucide.createIcons();
 }
