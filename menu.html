@@ -630,13 +630,13 @@ const MENU = {
   กาแฟ: [
     { id: 1, name: "อเมริกาโน่เย็น", price: 35, img: "images/กาแฟ/americano-cold.png" },
     { id: 2, name: "คาปูชิโน่", price: 40, img: "images/กาแฟ/cappuccino.png" },
-    { id: 3, name: "คาราเมลมัคคิอาโต้", price: 40, img: "images/กาแฟ/caramel-macchiato.png" },
     { id: 4, name: "ลาเต้เย็น", price: 40, img: "images/กาแฟ/latte-cold.png" },
     { id: 5, name: "มอคค่า", price: 40, img: "images/กาแฟ/mocha.png" },
     { id: 6, name: "อเมริกาโน่มะพร้าว", price: 40, img: "images/กาแฟ/americano-coconut.png" },
     { id: 7, name: "อเมริกาโน่ลิ้นจี่", price: 40, img: "images/กาแฟ/americano-lychee.png" },
     { id: 8, name: "อเมริกาโน่ส้ม", price: 40, img: "images/กาแฟ/americano-orange.png" },
     { id: 9, name: "เอสเปรสโซ่", price: 40, img: "images/กาแฟ/espresso.png" },
+    { id: 10, name: "อเมริกาโน่บอม", price: 40, img: "images/กาแฟ/americano-bomb.png" },
   ],
   ชานม: [
     { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png" },
@@ -647,6 +647,9 @@ const MENU = {
     { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png" },
     { id: 107, name: "บัตเตอร์เบียร์", price: 35, img: "images/ชานม/butterbeer.png" },
     { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png" },
+    { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png" },
+    { id: 110, name: "สตอเบอรี่ปั่น", price: 40, img: "images/ชานม/strawberry-blend.png", noBlend: true },
+    { id: 111, name: "นมสดสตอเบอรี่", price: 40, img: "images/ชานม/milk-strawberry.png" },
   ],
   มัทฉะ: [
     { id: 201, name: "เพียวมัทฉะ", price: 35, img: "images/มัทฉะ/matcha-pure.png" },
@@ -768,6 +771,14 @@ function addToCart(id) {
   document.querySelectorAll("#optSweetTags .tag").forEach((b,i) => b.classList.toggle("active", i===0));
   document.querySelectorAll("#optTempTags .tag").forEach((b,i)  => b.classList.toggle("active", i===0));
   document.querySelectorAll("#optExtraTags .tag").forEach(b => b.classList.remove("active"));
+
+  // ซ่อนปุ่มปั่นสำหรับสตอเบอรี่ปั่น (เพราะเป็นปั่นอยู่แล้ว)
+  const blendBtn = document.querySelector('#optTempTags .tag[data-val="ปั่น"]');
+  if (item.noBlend && blendBtn) {
+    blendBtn.style.display = "none";
+  } else if (blendBtn) {
+    blendBtn.style.display = "";
+  }
 
   document.getElementById("optModalOverlay").classList.add("show");
   lucide.createIcons();
