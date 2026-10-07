@@ -520,8 +520,10 @@
   <!-- TABS -->
   <div class="tabs-container">
     <button class="tab-btn active" data-category="กาแฟ">☕ กาแฟ</button>
-    <button class="tab-btn" data-category="ชานม">🥤 ชา/ชานม</button>
+    <button class="tab-btn" data-category="ชานม">🥛 ชา/ชานม</button>
     <button class="tab-btn" data-category="มัทฉะ">🍵 มัทฉะ</button>
+    <button class="tab-btn" data-category="โซดา">🧊 โซดา</button>
+    <button class="tab-btn" data-category="มะพร้าว">🥥 มะพร้าว</button>
   </div>
 
   <!-- MENU -->
@@ -669,6 +671,15 @@ const MENU = {
     { id: 207, name: "มัทฉะสตอเบอรี่", price: 40, img: "images/มัทฉะ/matcha-strawberry.png" },
     // 45 บาท
     { id: 208, name: "มัทฉะนมโอ้ต", price: 45, img: "images/มัทฉะ/matcha-oat.png" },
+  ],
+  โซดา: [
+    // เพิ่มเมนูโซดาได้ที่นี่
+  ],
+  มะพร้าว: [
+    // 30 บาท
+    { id: 301, name: "มะพร้าวสด", price: 30, img: "images/มะพร้าว/coconut-fresh.png" },
+    // 35 บาท
+    { id: 302, name: "มะพร้าวปั่นนมสด", price: 35, img: "images/มะพร้าว/coconut-milk-blend.png" },
   ]
 };
 
@@ -743,7 +754,9 @@ function switchCategory(category) {
   const labels = {
     'กาแฟ': 'เมนูกาแฟ',
     'ชานม': 'เมนูชา/ชานม',
-    'มัทฉะ': 'เมนูมัทฉะ'
+    'มัทฉะ': 'เมนูมัทฉะ',
+    'โซดา': 'เมนูโซดา',
+    'มะพร้าว': 'เมนูมะพร้าว'
   };
   document.getElementById('menuLabel').textContent = labels[category] || 'เมนู';
   
