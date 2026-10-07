@@ -674,6 +674,7 @@
         <button class="tag" data-val="มะนาว" data-extra="5"><i data-lucide="citrus"></i>มะนาว <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
         <button class="tag" data-val="น้ำผึ้ง" data-extra="5"><i data-lucide="droplets"></i>น้ำผึ้ง <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
         <button class="tag" data-val="เพิ่มช็อต" data-extra="20"><i data-lucide="zap"></i>เพิ่มช็อต <span style="font-size:0.72rem;opacity:0.7">+20฿</span></button>
+        <button class="tag oat-milk-tag" data-val="นมโอ้ต" data-extra="10" style="display:none"><i data-lucide="milk"></i>นมโอ้ต <span style="font-size:0.72rem;opacity:0.7">+10฿</span></button>
       </div>
     </div>
     <div class="opt-section" id="optOreoSection" style="display:none">
@@ -714,35 +715,37 @@ const MENU = {
     // 35 บาท
     { id: 1, name: "อเมริกาโน่เย็น", price: 35, img: "images/กาแฟ/americano-cold.png" },
     // 40 บาท
-    { id: 2, name: "คาปูชิโน่", price: 40, img: "images/กาแฟ/cappuccino.png" },
-    { id: 4, name: "ลาเต้เย็น", price: 40, img: "images/กาแฟ/latte-cold.png" },
+    { id: 2, name: "คาปูชิโน่", price: 40, img: "images/กาแฟ/cappuccino.png", hasOatMilk: true },
+    { id: 4, name: "ลาเต้เย็น", price: 40, img: "images/กาแฟ/latte-cold.png", hasOatMilk: true },
     { id: 5, name: "มอคค่า", price: 40, img: "images/กาแฟ/mocha.png" },
-    { id: 9, name: "เอสเปรสโซ่", price: 40, img: "images/กาแฟ/espresso.png" },
-    { id: 11, name: "มัคคีอาโต้", price: 40 },
-    { id: 12, name: "คาราเมลมัคคีอาโต้", price: 40 },
+    { id: 9, name: "เอสเปรสโซ่", price: 40, img: "images/กาแฟ/espresso.png", hasOatMilk: true },
+    { id: 12, name: "คาราเมลมัคคีอาโต้", price: 40, hasOatMilk: true },
+    { id: 13, name: "อเมริกาโน่น้ำผึ้ง", price: 40 },
+    { id: 14, name: "อเมริกาโน่มะนาว", price: 40 },
     // 45 บาท
     { id: 6, name: "อเมริกาโน่มะพร้าว", price: 45, img: "images/กาแฟ/americano-coconut.png" },
     { id: 7, name: "อเมริกาโน่ลิ้นจี่", price: 45, img: "images/กาแฟ/americano-lychee.png" },
     { id: 8, name: "อเมริกาโน่ส้ม", price: 45, img: "images/กาแฟ/americano-orange.png" },
+    { id: 15, name: "อเมริกาโน่น้ำผึ้งมะนาว", price: 45 },
     // 75 บาท
     { id: 10, name: "อเมริกาโน่บอม", price: 75, img: "images/กาแฟ/americano-bomb.png" },
   ],
   ชานม: [
     // 30 บาท
-    { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png", hasBlend: true },
-    { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png", hasBlend: true },
-    { id: 112, name: "นมชมพู", price: 30, img: "images/ชานม/pink-milk.png", hasBlend: true },
-    { id: 113, name: "นมสด", price: 30 },
+    { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png", hasBlend: true, hasOatMilk: true },
+    { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png", hasBlend: true, hasOatMilk: true },
+    { id: 112, name: "นมชมพู", price: 30, img: "images/ชานม/pink-milk.png", hasBlend: true, hasOatMilk: true },
+    { id: 113, name: "นมสด", price: 30, hasOatMilk: true },
     // 35 บาท
-    { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png", hasBlend: true },
-    { id: 104, name: "ชาไทยสตอเบอรี่", price: 35, img: "images/ชานม/thai-tea-strawberry.png" },
-    { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png", hasBlend: true },
-    { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png" },
-    { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png", hasBlend: true },
+    { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png", hasBlend: true, hasOatMilk: true },
+    { id: 104, name: "ชาไทยสตอเบอรี่", price: 35, img: "images/ชานม/thai-tea-strawberry.png", hasOatMilk: true },
+    { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png", hasBlend: true, hasOatMilk: true },
+    { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png", hasOatMilk: true },
+    { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png", hasBlend: true, hasOatMilk: true },
     // 40 บาท
-    { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png", hasBlend: true },
-    { id: 110, name: "สตอเบอรี่ปั่น", price: 40, img: "images/ชานม/strawberry-blend.png", onlyBlend: true },
-    { id: 111, name: "นมสดสตอเบอรี่", price: 40, img: "images/ชานม/milk-strawberry.png" },
+    { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png", hasBlend: true, hasOatMilk: true },
+    { id: 110, name: "สตอเบอรี่ปั่น", price: 40, img: "images/ชานม/strawberry-blend.png", onlyBlend: true, hasOatMilk: true },
+    { id: 111, name: "นมสดสตอเบอรี่", price: 40, img: "images/ชานม/milk-strawberry.png", hasOatMilk: true },
   ],
   มัทฉะ: [
     // 35 บาท
@@ -754,6 +757,8 @@ const MENU = {
     { id: 205, name: "มัทฉะส้ม", price: 40, img: "images/มัทฉะ/matcha-orange.png" },
     { id: 206, name: "มัทฉะโฟมมะพร้าว", price: 40, img: "images/มัทฉะ/matcha-coconut-foam.png" },
     { id: 207, name: "มัทฉะสตอเบอรี่", price: 40, img: "images/มัทฉะ/matcha-strawberry.png" },
+    { id: 209, name: "มัทฉะน้ำผึ้ง", price: 40 },
+    { id: 210, name: "มัทฉะน้ำผึ้งมะนาว", price: 40 },
     // 45 บาท
     { id: 208, name: "มัทฉะนมโอ้ต", price: 45, img: "images/มัทฉะ/matcha-oat.png" },
   ],
@@ -768,10 +773,10 @@ const MENU = {
     { id: 403, name: "มะนาวโซดา", price: 35, noShot: true },
   ],
   มะพร้าว: [
-    // 30 บาท
-    { id: 301, name: "มะพร้าวสด", price: 30, img: "images/มะพร้าว/coconut-fresh.png", hasBlend: true },
     // 35 บาท
-    { id: 302, name: "มะพร้าวปั่นนมสด", price: 35, img: "images/มะพร้าว/coconut-milk-blend.png", onlyBlend: true },
+    { id: 301, name: "มะพร้าวสด", price: 35, img: "images/มะพร้าว/coconut-fresh.png", hasBlend: true },
+    // 40 บาท
+    { id: 302, name: "มะพร้าวนมสดปั่น", price: 40, img: "images/มะพร้าว/coconut-milk-blend.png", onlyBlend: true },
   ]
 };
 
@@ -930,6 +935,14 @@ function addToCart(id) {
   // แสดงส่วนท็อปปิ้งพิเศษทุกเมนู
   const toppingSection = document.getElementById("optToppingSection");
   toppingSection.style.display = "block";
+
+  // จัดการปุ่มนมโอ้ตภายในท็อปปิ้งเดียวกัน
+  const oatMilkBtn = document.querySelector('.oat-milk-tag');
+  if (item.hasOatMilk) {
+    if (oatMilkBtn) oatMilkBtn.style.display = "";
+  } else {
+    if (oatMilkBtn) oatMilkBtn.style.display = "none";
+  }
 
   // จัดการส่วน "เพิ่มเติม" (แยกน้ำแข็ง, เพิ่มช็อต)
   const extraSection = document.querySelector('.opt-section:has(#optExtraTags)');
