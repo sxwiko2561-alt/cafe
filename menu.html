@@ -597,6 +597,13 @@
       <div class="opt-section-label">อุณหภูมิ</div>
       <div class="tag-group" id="optTempTags">
         <button class="tag active" data-val="เย็น" data-extra="0"><i data-lucide="snowflake"></i>เย็น</button>
+        <button class="tag" data-val="ปั่น" data-extra="5"><i data-lucide="wind"></i>ปั่น <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
+      </div>
+    </div>
+    <div class="opt-section" id="optOreoSection" style="display:none">
+      <div class="opt-section-label">ท็อปปิ้ง</div>
+      <div class="tag-group" id="optOreoTags">
+        <button class="tag" data-val="โอริโอ้" data-extra="5"><i data-lucide="cookie"></i>โอริโอ้ <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
       </div>
     </div>
     <div class="opt-section">
@@ -643,19 +650,19 @@ const MENU = {
   ],
   ชานม: [
     // 30 บาท
-    { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png" },
-    { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png" },
-    { id: 112, name: "นมชมพู", price: 30, img: "images/ชานม/pink-milk.png" },
+    { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png", hasBlend: true, hasOreo: true },
+    { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png", hasBlend: true, hasOreo: true },
+    { id: 112, name: "นมชมพู", price: 30, img: "images/ชานม/pink-milk.png", hasBlend: true },
     // 35 บาท
-    { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png" },
+    { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png", hasBlend: true },
     { id: 104, name: "ชาไทยสตอเบอรี่", price: 35, img: "images/ชานม/thai-tea-strawberry.png" },
-    { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png" },
+    { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png", hasBlend: true },
     { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png" },
     { id: 107, name: "บัตเตอร์เบียร์", price: 35, img: "images/ชานม/butterbeer.png" },
     { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png" },
     // 40 บาท
-    { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png" },
-    { id: 110, name: "สตอเบอรี่ปั่น", price: 40, img: "images/ชานม/strawberry-blend.png", noBlend: true },
+    { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png", hasBlend: true },
+    { id: 110, name: "สตอเบอรี่ปั่น", price: 40, img: "images/ชานม/strawberry-blend.png", onlyBlend: true },
     { id: 111, name: "นมสดสตอเบอรี่", price: 40, img: "images/ชานม/milk-strawberry.png" },
   ],
   มัทฉะ: [
@@ -676,9 +683,9 @@ const MENU = {
   ],
   มะพร้าว: [
     // 30 บาท
-    { id: 301, name: "มะพร้าวสด", price: 30, img: "images/มะพร้าว/coconut-fresh.png" },
+    { id: 301, name: "มะพร้าวสด", price: 30, img: "images/มะพร้าว/coconut-fresh.png", hasBlend: true },
     // 35 บาท
-    { id: 302, name: "มะพร้าวปั่นนมสด", price: 35, img: "images/มะพร้าว/coconut-milk-blend.png" },
+    { id: 302, name: "มะพร้าวปั่นนมสด", price: 35, img: "images/มะพร้าว/coconut-milk-blend.png", onlyBlend: true },
   ]
 };
 
@@ -792,13 +799,35 @@ function addToCart(id) {
   document.querySelectorAll("#optSweetTags .tag").forEach((b,i) => b.classList.toggle("active", i===0));
   document.querySelectorAll("#optTempTags .tag").forEach((b,i)  => b.classList.toggle("active", i===0));
   document.querySelectorAll("#optExtraTags .tag").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#optOreoTags .tag").forEach(b => b.classList.remove("active"));
 
-  // ซ่อนปุ่มปั่นสำหรับสตอเบอรี่ปั่น (เพราะเป็นปั่นอยู่แล้ว)
+  // จัดการปุ่มอุณหภูมิ
+  const coldBtn = document.querySelector('#optTempTags .tag[data-val="เย็น"]');
   const blendBtn = document.querySelector('#optTempTags .tag[data-val="ปั่น"]');
-  if (item.noBlend && blendBtn) {
-    blendBtn.style.display = "none";
-  } else if (blendBtn) {
-    blendBtn.style.display = "";
+  
+  if (item.onlyBlend) {
+    // เมนูปั่นอย่างเดียว (สตอเบอรี่ปั่น, มะพร้าวปั่น) - ซ่อนเย็น แสดงแค่ปั่น
+    if (coldBtn) coldBtn.style.display = "none";
+    if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.add("active"); }
+    optTemp = "ปั่น";
+  } else if (item.hasBlend) {
+    // มีทั้งเย็นและปั่น
+    if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
+    if (blendBtn) blendBtn.style.display = "";
+    optTemp = "เย็น";
+  } else {
+    // เย็นอย่างเดียว
+    if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
+    if (blendBtn) blendBtn.style.display = "none";
+    optTemp = "เย็น";
+  }
+
+  // จัดการส่วนโอริโอ้
+  const oreoSection = document.getElementById("optOreoSection");
+  if (item.hasOreo) {
+    oreoSection.style.display = "block";
+  } else {
+    oreoSection.style.display = "none";
   }
 
   document.getElementById("optModalOverlay").classList.add("show");
@@ -882,6 +911,17 @@ function initTags() {
     optTempExtra = parseInt(btn.dataset.extra) || 0;
   });
   document.getElementById("optExtraTags").addEventListener("click", e => {
+    const btn = e.target.closest(".tag"); if (!btn) return;
+    btn.classList.toggle("active");
+    const val = btn.dataset.val;
+    const price = parseInt(btn.dataset.extra) || 0;
+    if (btn.classList.contains("active")) {
+      optExtras.push({ name: val, price });
+    } else {
+      optExtras = optExtras.filter(x => x.name !== val);
+    }
+  });
+  document.getElementById("optOreoTags").addEventListener("click", e => {
     const btn = e.target.closest(".tag"); if (!btn) return;
     btn.classList.toggle("active");
     const val = btn.dataset.val;
