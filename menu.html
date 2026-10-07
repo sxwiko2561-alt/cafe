@@ -176,6 +176,63 @@
     /* ===== MAIN ===== */
     main { max-width: 480px; margin: 0 auto; padding: 20px 16px 120px; }
 
+    /* ===== SEARCH BOX ===== */
+    .search-box {
+      position: relative;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent);
+    }
+    .search-box i:first-child {
+      width: 18px;
+      height: 18px;
+      stroke: var(--text-3);
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .search-box input::placeholder {
+      color: var(--text-3);
+    }
+    .search-box button {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .search-box button:hover {
+      background: var(--accent-light);
+    }
+    .search-box button i {
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-2);
+    }
+
     /* ===== TABS ===== */
     .tabs-container {
       background: var(--surface);
@@ -517,13 +574,20 @@
 </div>
 
 <main>
+  <!-- SEARCH BOX -->
+  <div class="search-box">
+    <i data-lucide="search"></i>
+    <input type="text" id="searchInput" placeholder="ค้นหาเมนู..." />
+    <button id="clearSearch" style="display:none"><i data-lucide="x"></i></button>
+  </div>
+
   <!-- TABS -->
   <div class="tabs-container">
-    <button class="tab-btn active" data-category="กาแฟ">☕ กาแฟ</button>
-    <button class="tab-btn" data-category="ชานม">🥛 ชา/ชานม</button>
-    <button class="tab-btn" data-category="มัทฉะ">🍵 มัทฉะ</button>
-    <button class="tab-btn" data-category="โซดา">🧊 โซดา</button>
-    <button class="tab-btn" data-category="มะพร้าว">🥥 มะพร้าว</button>
+    <button class="tab-btn active" data-category="กาแฟ">กาแฟ</button>
+    <button class="tab-btn" data-category="ชานม">ชา/ชานม</button>
+    <button class="tab-btn" data-category="มัทฉะ">มัทฉะ</button>
+    <button class="tab-btn" data-category="โซดา">โซดา</button>
+    <button class="tab-btn" data-category="มะพร้าว">มะพร้าว</button>
   </div>
 
   <!-- MENU -->
@@ -653,12 +717,12 @@ const MENU = {
     { id: 101, name: "ชาไทย", price: 30, img: "images/ชานม/thai-tea.png", hasBlend: true, hasOreo: true },
     { id: 102, name: "ชาเขียว", price: 30, img: "images/ชานม/green-tea.png", hasBlend: true, hasOreo: true },
     { id: 112, name: "นมชมพู", price: 30, img: "images/ชานม/pink-milk.png", hasBlend: true },
+    { id: 113, name: "นมสด", price: 30 },
     // 35 บาท
     { id: 103, name: "ชาไทยมะพร้าว", price: 35, img: "images/ชานม/thai-tea-coconut.png", hasBlend: true },
     { id: 104, name: "ชาไทยสตอเบอรี่", price: 35, img: "images/ชานม/thai-tea-strawberry.png" },
     { id: 105, name: "ชาเขียวมะพร้าว", price: 35, img: "images/ชานม/green-tea-coconut.png", hasBlend: true },
     { id: 106, name: "ชาเขียวสตอเบอรี่", price: 35, img: "images/ชานม/green-tea-strawberry.png" },
-    { id: 107, name: "บัตเตอร์เบียร์", price: 35, img: "images/ชานม/butterbeer.png" },
     { id: 108, name: "โกโก้", price: 35, img: "images/ชานม/cocoa.png" },
     // 40 บาท
     { id: 109, name: "นมสดคาราเมล", price: 40, img: "images/กาแฟ/caramel-macchiato.png", hasBlend: true },
@@ -679,7 +743,14 @@ const MENU = {
     { id: 208, name: "มัทฉะนมโอ้ต", price: 45, img: "images/มัทฉะ/matcha-oat.png" },
   ],
   โซดา: [
-    // เพิ่มเมนูโซดาได้ที่นี่
+    // 30 บาท
+    { id: 401, name: "บ้วยโซดา", price: 30, noShot: true },
+    { id: 404, name: "แดงโซดา", price: 30, noShot: true },
+    { id: 405, name: "สตอเบอรี่โซดา", price: 30, noShot: true },
+    // 35 บาท
+    { id: 107, name: "บัตเตอร์เบียร์", price: 35, img: "images/ชานม/butterbeer.png", noShot: true },
+    { id: 402, name: "ส้มโซดา", price: 35, noShot: true },
+    { id: 403, name: "มะนาวโซดา", price: 35, noShot: true },
   ],
   มะพร้าว: [
     // 30 บาท
@@ -751,6 +822,13 @@ function renderMenu() {
 function switchCategory(category) {
   currentCategory = category;
   
+  // ล้างการค้นหา
+  if (searchMode) {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    searchMode = false;
+  }
+  
   // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.category === category);
@@ -801,22 +879,25 @@ function addToCart(id) {
   document.querySelectorAll("#optExtraTags .tag").forEach(b => b.classList.remove("active"));
   document.querySelectorAll("#optOreoTags .tag").forEach(b => b.classList.remove("active"));
 
-  // จัดการปุ่มอุณหภูมิ
+  // จัดการส่วนอุณหภูมิ
+  const tempSection = document.querySelector('.opt-section:has(#optTempTags)');
   const coldBtn = document.querySelector('#optTempTags .tag[data-val="เย็น"]');
   const blendBtn = document.querySelector('#optTempTags .tag[data-val="ปั่น"]');
   
   if (item.onlyBlend) {
-    // เมนูปั่นอย่างเดียว (สตอเบอรี่ปั่น, มะพร้าวปั่น) - ซ่อนเย็น แสดงแค่ปั่น
-    if (coldBtn) coldBtn.style.display = "none";
-    if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.add("active"); }
+    // เมนูปั่นอย่างเดียว - ซ่อนทั้งส่วนอุณหภูมิ
+    if (tempSection) tempSection.style.display = "none";
     optTemp = "ปั่น";
+    optTempExtra = 0; // ไม่มีค่าเพิ่ม
   } else if (item.hasBlend) {
     // มีทั้งเย็นและปั่น
+    if (tempSection) tempSection.style.display = "block";
     if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
     if (blendBtn) blendBtn.style.display = "";
     optTemp = "เย็น";
   } else {
     // เย็นอย่างเดียว
+    if (tempSection) tempSection.style.display = "block";
     if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
     if (blendBtn) blendBtn.style.display = "none";
     optTemp = "เย็น";
@@ -828,6 +909,18 @@ function addToCart(id) {
     oreoSection.style.display = "block";
   } else {
     oreoSection.style.display = "none";
+  }
+
+  // จัดการส่วน "เพิ่มเติม" (แยกน้ำแข็ง, เพิ่มช็อต)
+  const extraSection = document.querySelector('.opt-section:has(#optExtraTags)');
+  const shotBtn = document.querySelector('#optExtraTags .tag[data-val="เพิ่มช็อต"]');
+  
+  if (item.noShot) {
+    // ถ้าเป็นโซดา - ซ่อนปุ่มเพิ่มช็อต
+    if (shotBtn) shotBtn.style.display = "none";
+  } else {
+    // เมนูอื่นๆ - แสดงปุ่มเพิ่มช็อต
+    if (shotBtn) shotBtn.style.display = "";
   }
 
   document.getElementById("optModalOverlay").classList.add("show");
@@ -1194,6 +1287,74 @@ function playCancel() {
 
 function closeModal() { document.getElementById("modalOverlay").classList.remove("show"); }
 function scrollToCart() { document.getElementById("cartBox").scrollIntoView({ behavior:"smooth", block:"center" }); }
+
+// ===== SEARCH FUNCTIONALITY =====
+let searchMode = false;
+const searchInput = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearSearch');
+
+searchInput.addEventListener('input', (e) => {
+  const query = e.target.value.trim();
+  if (query) {
+    clearBtn.style.display = 'flex';
+    searchMode = true;
+    performSearch(query);
+  } else {
+    clearBtn.style.display = 'none';
+    searchMode = false;
+    renderMenu();
+  }
+});
+
+clearBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  searchMode = false;
+  renderMenu();
+});
+
+function performSearch(query) {
+  const q = query.toLowerCase();
+  let allResults = [];
+  
+  // ค้นหาทุกหมวดหมู่
+  for (let category in MENU) {
+    const items = MENU[category].filter(item => 
+      item.name.toLowerCase().includes(q)
+    );
+    allResults = allResults.concat(items);
+  }
+  
+  // แสดงผลลัพธ์
+  const menuGrid = document.getElementById('menuGrid');
+  const menuLabel = document.getElementById('menuLabel');
+  
+  if (allResults.length === 0) {
+    menuLabel.textContent = 'ไม่พบเมนูที่ค้นหา';
+    menuGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--text-3);font-size:0.85rem">ลองค้นหาด้วยคำอื่น</div>';
+  } else {
+    menuLabel.textContent = `พบ ${allResults.length} เมนู`;
+    menuGrid.innerHTML = allResults.map(item => `
+      <div class="menu-card" onclick="addToCart(${item.id})">
+        <div class="img-wrap">
+          ${item.img ? `<img src="${item.img}" alt="${item.name}"
+            onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
+          <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
+            <i data-lucide="cup-soda"></i>
+          </div>
+          <span class="price-chip">${item.price} ฿</span>
+        </div>
+        <div class="card-body">
+          <span class="card-name">${item.name}</span>
+          <button class="btn-add" onclick="event.stopPropagation();addToCart(${item.id})">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+      </div>`).join('');
+  }
+  
+  lucide.createIcons();
+}
 
 // ===== INIT =====
 renderMenu(); renderCart(); initTags();
