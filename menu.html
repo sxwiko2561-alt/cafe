@@ -297,10 +297,6 @@
       background: #fff;
       transition: transform 0.35s;
     }
-    /* ชาไทย/ชาเขียว รูปใหญ่เกินไป ลดให้เล็กลงนิดนึง */
-    .menu-card .img-wrap img.img-scale-down {
-      padding: 16px;
-    }
     .menu-card:hover .img-wrap img { transform: scale(1.05); }
     .icon-fallback {
       position: absolute; inset: 0;
@@ -826,7 +822,7 @@ function renderMenu() {
   document.getElementById("menuGrid").innerHTML = menuItems.map(item => `
     <div class="menu-card" onclick="addToCart(${item.id})">
       <div class="img-wrap">
-        ${item.img ? `<img src="${item.img}" alt="${item.name}" class="${item.id === 101 || item.id === 102 ? 'img-scale-down' : ''}"
+        ${item.img ? `<img src="${item.img}" alt="${item.name}"
           onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
         <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
           <i data-lucide="cup-soda"></i>
@@ -1385,7 +1381,7 @@ function performSearch(query) {
     menuGrid.innerHTML = allResults.map(item => `
       <div class="menu-card" onclick="addToCart(${item.id})">
         <div class="img-wrap">
-          ${item.img ? `<img src="${item.img}" alt="${item.name}" class="${item.id === 101 || item.id === 102 ? 'img-scale-down' : ''}"
+          ${item.img ? `<img src="${item.img}" alt="${item.name}"
             onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
           <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
             <i data-lucide="cup-soda"></i>
