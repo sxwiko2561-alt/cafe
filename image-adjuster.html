@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ปรับขนาดรูปภาพ - Image Adjuster</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sarabun', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h1 { text-align: center; margin-bottom: 20px; color: #333; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .preview {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: white;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.2s;
+    }
+    .name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    label {
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .value {
+      font-weight: 600;
+      color: #333;
+    }
+    button {
+      padding: 10px;
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    button:hover { background: #333; }
+    .actions {
+      text-align: center;
+      margin-top: 30px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn-apply {
+      background: #2d6a4f;
+      padding: 15px 30px;
+      font-size: 16px;
+    }
+    .btn-reset {
+      background: #dc3545;
+      padding: 15px 30px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      color: #155724;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 ปรับขนาดรูปภาพเมนู</h1>
+  <div class="container" id="container"></div>
+  
+  <div class="actions">
+    <button class="btn-reset" onclick="resetAll()">รีเซ็ตทั้งหมด</button>
+    <button class="btn-apply" onclick="applyChanges()">✅ บันทึกการเปลี่ยนแปลง</button>
+  </div>
+  
+  <div id="result"></div>
+
+  <script>
+    const images = [
+      { path: 'images/กาแฟ/americano-cold.png', name: 'อเมริกาโน่เย็น' },
+      { path: 'images/กาแฟ/americano-bomb.png', name: 'อเมริกาโน่บอม' },
+      { path: 'images/กาแฟ/americano-coconut.png', name: 'อเมริกาโน่มะพร้าว' },
+      { path: 'images/กาแฟ/americano-lychee.png', name: 'อเมริกาโน่ลิ้นจี่' },
+      { path: 'images/กาแฟ/americano-orange.png', name: 'อเมริกาโน่ส้ม' },
+      { path: 'images/กาแฟ/cappuccino.png', name: 'คาปูชิโน่' },
+      { path: 'images/กาแฟ/caramel-macchiato.png', name: 'คาราเมลมัคเคียโต้' },
+      { path: 'images/กาแฟ/espresso.png', name: 'เอสเปรสโซ่' },
+      { path: 'images/กาแฟ/latte-cold.png', name: 'ลาเต้เย็น' },
+      { path: 'images/กาแฟ/mocha.png', name: 'ม็อคค่า' },
+      
+      { path: 'images/ชานม/cocoa.png', name: 'โกโก้' },
+      { path: 'images/ชานม/butterbeer.png', name: 'บัตเตอร์เบียร์' },
+      { path: 'images/ชานม/green-tea.png', name: 'ชาเขียว' },
+      { path: 'images/ชานม/green-tea-coconut.png', name: 'ชาเขียวมะพร้าว' },
+      { path: 'images/ชานม/green-tea-strawberry.png', name: 'ชาเขียวสตอเบอรี่' },
+      { path: 'images/ชานม/thai-tea.png', name: 'ชาไทย' },
+      { path: 'images/ชานม/thai-tea-coconut.png', name: 'ชาไทยมะพร้าว' },
+      { path: 'images/ชานม/thai-tea-strawberry.png', name: 'ชาไทยสตอเบอรี่' },
+      
+      { path: 'images/มัทฉะ/matcha-pure.png', name: 'มัทฉะบริสุทธิ์' },
+      { path: 'images/มัทฉะ/matcha-latte.png', name: 'มัทฉะลาเต้' },
+      { path: 'images/มัทฉะ/matcha-coconut.png', name: 'มัทฉะมะพร้าว' },
+      { path: 'images/มัทฉะ/matcha-coconut-foam.png', name: 'มัทฉะโฟมมะพร้าว' },
+      { path: 'images/มัทฉะ/matcha-oat.png', name: 'มัทฉะโอ๊ต' },
+      { path: 'images/มัทฉะ/matcha-orange.png', name: 'มัทฉะส้ม' },
+      { path: 'images/มัทฉะ/matcha-honey-lemon.png', name: 'มัทฉะน้ำผึ้งมะนาว' },
+      { path: 'images/มัทฉะ/matcha-strawberry.png', name: 'มัทฉะสตอเบอรี่' }
+    ];
+
+    const settings = {};
+    
+    images.forEach(img => {
+      settings[img.path] = { zoom: 1.0, shiftY: 0 };
+    });
+
+    function render() {
+      const container = document.getElementById('container');
+      container.innerHTML = '';
+      
+      images.forEach(img => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="preview">
+            <img src="${img.path}?v=3" id="img-${img.path.replace(/[\/\.]/g, '-')}" 
+                 style="transform: scale(${settings[img.path].zoom}) translateY(${settings[img.path].shiftY}px)">
+          </div>
+          <div class="name">${img.name}</div>
+          <div class="controls">
+            <label>
+              Zoom: <span class="value">${(settings[img.path].zoom * 100).toFixed(0)}%</span>
+            </label>
+            <input type="range" min="50" max="200" value="${settings[img.path].zoom * 100}" 
+                   oninput="updateZoom('${img.path}', this.value)">
+            
+            <label>
+              Shift Y: <span class="value">${settings[img.path].shiftY}px</span>
+            </label>
+            <input type="range" min="-100" max="100" value="${settings[img.path].shiftY}" 
+                   oninput="updateShift('${img.path}', this.value)">
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateZoom(path, value) {
+      settings[path].zoom = value / 100;
+      const img = document.getElementById('img-' + path.replace(/[\/\.]/g, '-'));
+      img.style.transform = `scale(${settings[path].zoom}) translateY(${settings[path].shiftY}px)`;
+      event.target.previousElementSibling.querySelector('.value').textContent = `${value}%`;
+    }
+
+    function updateShift(path, value) {
+      settings[path].shiftY = parseInt(value);
+      const img = document.getElementById('img-' + path.replace(/[\/\.]/g, '-'));
+      img.style.transform = `scale(${settings[path].zoom}) translateY(${settings[path].shiftY}px)`;
+      event.target.previousElementSibling.querySelector('.value').textContent = `${value}px`;
+    }
+
+    function resetAll() {
+      Object.keys(settings).forEach(key => {
+        settings[key] = { zoom: 1.0, shiftY: 0 };
+      });
+      render();
+    }
+
+    function applyChanges() {
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.innerHTML = `
+        <h3>📋 คัดลอกโค้ดด้านล่างไปรันใน Terminal:</h3>
+        <pre style="background: #333; color: #0f0; padding: 15px; border-radius: 8px; overflow-x: auto; text-align: left; margin-top: 10px;">cd "e:\\AI Detection\\Coffee"
+python apply_adjustments.py</pre>
+        <p style="margin-top: 10px; font-size: 14px;">จากนั้น push ด้วย: <code>git add images && git commit -m "ปรับขนาดรูปภาพ" && git push origin main</code></p>
+      `;
+      
+      // สร้าง Python script
+      const script = generatePythonScript();
+      console.log('Generated script:', script);
+      alert('คัดลอกโค้ดจากกล่องสีเขียวแล้วรันใน Terminal ครับ!');
+    }
+
+    function generatePythonScript() {
+      let script = `from PIL import Image\nimport os\n\nbase = r"e:\\AI Detection\\Coffee"\n\nadjustments = {\n`;
+      
+      Object.keys(settings).forEach(path => {
+        const s = settings[path];
+        if (s.zoom !== 1.0 || s.shiftY !== 0) {
+          script += `    r"${path}": {"zoom": ${s.zoom}, "shift_y": ${s.shiftY}},\n`;
+        }
+      });
+      
+      script += `}\n\nfor img_path, adj in adjustments.items():
+    full_path = os.path.join(base, img_path)
+    try:
+        img = Image.open(full_path).convert('RGBA')
+        
+        # Zoom
+        if adj["zoom"] != 1.0:
+            new_size = (int(img.size[0] * adj["zoom"]), int(img.size[1] * adj["zoom"]))
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # Canvas 400x400
+        canvas = Image.new('RGBA', (400, 400), (0, 0, 0, 0))
+        offset_x = (400 - img.size[0]) // 2
+        offset_y = (400 - img.size[1]) // 2 - adj["shift_y"]
+        canvas.paste(img, (offset_x, offset_y), img)
+        
+        canvas.save(full_path, 'PNG', optimize=True)
+        print(f"✓ {img_path}")
+    except Exception as e:
+        print(f"✗ {img_path}: {e}")
+
+print("\\n✅ Done!")`;
+      
+      return script;
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
