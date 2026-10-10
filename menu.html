@@ -831,7 +831,7 @@ function renderMenu() {
   document.getElementById("menuGrid").innerHTML = menuItems.map(item => `
     <div class="menu-card" onclick="addToCart(${item.id})">
       <div class="img-wrap">
-        ${item.img ? `<img src="${item.img}" alt="${item.name}"
+        ${item.img ? `<img src="${item.img}?v=2" alt="${item.name}"
           onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
         <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
           <i data-lucide="cup-soda"></i>
@@ -895,7 +895,7 @@ function addToCart(id) {
   const imgEl = document.getElementById("optModalImg");
   const iconEl = document.getElementById("optModalImgIcon");
   if (item.img) {
-    imgEl.src = item.img; imgEl.style.display = "";
+    imgEl.src = item.img + "?v=" + Date.now(); imgEl.style.display = "";
     iconEl.style.display = "none";
   } else {
     imgEl.style.display = "none"; iconEl.style.display = "flex";
@@ -1390,7 +1390,7 @@ function performSearch(query) {
     menuGrid.innerHTML = allResults.map(item => `
       <div class="menu-card" onclick="addToCart(${item.id})">
         <div class="img-wrap">
-          ${item.img ? `<img src="${item.img}" alt="${item.name}"
+          ${item.img ? `<img src="${item.img}?v=2" alt="${item.name}"
             onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
           <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
             <i data-lucide="cup-soda"></i>
