@@ -324,7 +324,12 @@ function renderOrders() {
           ${o.phone ? `<span style="font-size:0.78rem;color:#aaa">📞 ${o.phone}</span>` : ""}
           <span class="order-time">${formatDateTime(o.timestamp)}</span>
         </div>
-        <div class="order-items">${o.items.map(i => `<strong>${i.name}</strong> ×${i.qty}`).join(" &nbsp;")}</div>
+        <div class="order-items">
+          ${o.items.map(i => {
+            const noteHTML = i.note ? `<div style="font-size:0.7rem;color:#f59e0b;margin-top:2px;padding:3px 6px;background:#fffbeb;border-radius:4px;display:inline-block">💬 ${i.note}</div>` : '';
+            return `<div style="margin-bottom:4px"><strong>${i.name}</strong> ×${i.qty}${noteHTML}</div>`;
+          }).join("")}
+        </div>
         <div class="order-meta">
           <span class="meta-tag">${o.sweet}</span>
           <span class="meta-tag">${o.temp}</span>
