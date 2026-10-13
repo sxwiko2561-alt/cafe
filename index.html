@@ -28,18 +28,38 @@
       --radius-sm: 10px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'Sarabun', 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+    /* ===== DARK MODE ===== */
+    body.dark-mode {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #f5f5f5;
+      --text-2: #a0a0a0;
+      --text-3: #707070;
+      --accent: #f5f5f5;
+      --accent-light: #2a2a2a;
+      --green: #34d399;
+      --green-light: #064e3b;
+      --yellow: #fbbf24;
+      --yellow-light: #422006;
+      --blue: #60a5fa;
+      --blue-light: #1e3a8a;
+      --red: #f87171;
+      --red-light: #450a0a;
+    }
 
-    .btn-sound {
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Sarabun', 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; transition: background 0.3s, color 0.3s; }
+
+    .btn-sound, .btn-theme {
       background: var(--accent-light); border: 1px solid var(--border);
       border-radius: var(--radius-sm); padding: 6px 12px;
       font-size: 0.78rem; font-weight: 600; font-family: inherit;
       color: var(--text-2); cursor: pointer; transition: all 0.15s;
       display: flex; align-items: center; gap: 5px;
     }
-    .btn-sound:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .btn-sound.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-sound:hover, .btn-theme:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-sound.on, .btn-theme.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* ===== LOGIN ===== */
     #loginOverlay {
@@ -332,6 +352,7 @@
       </div>
     </div>
     <div class="shop-toggle">
+      <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="เปลี่ยนธีม">🌙</button>
       <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="เปิด/ปิดเสียงแจ้งเตือน">🔔</button>
       <span class="toggle-label" id="toggleLabel">เปิดรับออเดอร์</span>
       <div class="toggle-track on" id="toggleTrack" title="กดค้าง 2 วิ เพื่อเปลี่ยนสถานะ">
@@ -536,6 +557,29 @@ function toggleSound() {
     getAudioCtx(); // unlock แล้วทดสอบเสียง
     playNewOrderSound();
   }
+}
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const body = document.body;
+  const isDark = body.classList.toggle("dark-mode");
+  localStorage.setItem("adminTheme", isDark ? "dark" : "light");
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  const btn = document.getElementById("btnTheme");
+  const isDark = document.body.classList.contains("dark-mode");
+  btn.textContent = isDark ? "☀️" : "🌙";
+  btn.classList.toggle("on", isDark);
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem("adminTheme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+  updateThemeButton();
 }
 
 // flash title tab
@@ -770,6 +814,8 @@ function renderOrders() {
 }
 
 // ===== INIT =====
+loadTheme(); // โหลด theme preference
+
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
   loadShopState(); loadOrders(); subscribeOrders();
