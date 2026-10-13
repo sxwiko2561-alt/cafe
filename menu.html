@@ -550,6 +550,113 @@
       font-size: 0.88rem; font-weight: 600; font-family: inherit;
       cursor: pointer;
     }
+
+    /* ===== ORDER SUMMARY MODAL ===== */
+    .summary-modal {
+      background: var(--surface); border-radius: 24px;
+      padding: 0; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+      animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .summary-header {
+      background: var(--accent); color: #fff;
+      padding: 24px 20px; border-radius: 24px 24px 0 0;
+      text-align: center;
+    }
+    .summary-header h2 {
+      font-size: 1.2rem; font-weight: 600; margin-bottom: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .summary-header p {
+      font-size: 0.8rem; opacity: 0.9;
+    }
+    .summary-section {
+      padding: 20px; border-bottom: 1px solid var(--border);
+    }
+    .summary-section-title {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-2);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .summary-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px; background: var(--bg); border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .summary-item:last-child { margin-bottom: 0; }
+    .summary-item-icon {
+      width: 48px; height: 48px; border-radius: 10px;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .summary-item-icon img {
+      width: 100%; height: 100%; object-fit: contain; padding: 4px;
+    }
+    .summary-item-icon i {
+      width: 24px; height: 24px; stroke: #ccc;
+    }
+    .summary-item-details {
+      flex: 1; min-width: 0;
+    }
+    .summary-item-name {
+      font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;
+    }
+    .summary-item-opts {
+      font-size: 0.75rem; color: var(--text-2);
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .summary-item-opts span {
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+    .summary-item-opts i {
+      width: 12px; height: 12px; stroke: currentColor;
+    }
+    .summary-item-price {
+      font-size: 0.9rem; font-weight: 600; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .summary-customer-info {
+      background: var(--bg); padding: 12px; border-radius: 12px;
+    }
+    .summary-info-row {
+      font-size: 0.85rem; padding: 4px 0; color: var(--text);
+    }
+    .summary-info-row strong {
+      color: var(--text-2); margin-right: 6px;
+    }
+    .summary-total-section {
+      padding: 20px; background: var(--green-light);
+    }
+    .summary-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .summary-total-row span:first-child {
+      font-size: 0.95rem; font-weight: 600; color: var(--text-2);
+    }
+    .summary-total-amount {
+      font-size: 1.4rem; font-weight: 700; color: var(--green);
+    }
+    .summary-actions {
+      padding: 16px 20px 20px; display: flex; gap: 10px;
+    }
+    .btn-summary-back, .btn-summary-confirm {
+      flex: 1; padding: 14px; border: none; border-radius: var(--radius-sm);
+      font-size: 0.9rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: opacity 0.15s;
+    }
+    .btn-summary-back {
+      background: var(--accent-light); color: var(--text);
+    }
+    .btn-summary-back:active { opacity: 0.7; }
+    .btn-summary-confirm {
+      background: var(--green); color: #fff;
+    }
+    .btn-summary-confirm:active { opacity: 0.8; }
+    .btn-summary-confirm:disabled {
+      opacity: 0.6; cursor: not-allowed;
+    }
+    .btn-summary-back i, .btn-summary-confirm i {
+      width: 18px; height: 18px; stroke: currentColor;
+    }
   </style>
 </head>
 <body>
@@ -711,6 +818,13 @@
     <div class="order-num" id="modalOrderId">#0001</div>
     <p id="modalSummary"></p>
     <button class="btn-modal-close" onclick="closeModal()">ตกลง</button>
+  </div>
+</div>
+
+<!-- ORDER SUMMARY MODAL -->
+<div class="modal-overlay" id="orderSummaryModal">
+  <div class="summary-modal" id="orderSummaryContent">
+    <!-- Content will be injected by JavaScript -->
   </div>
 </div>
 
@@ -1129,17 +1243,125 @@ async function submitAddMore(myId, newItems, newTotal) {
 
 // ===== SUBMIT =====
 async function submitOrder() {
+  // ตรวจสอบข้อมูลก่อน
+  const name = document.getElementById("custName").value.trim();
+  if (!name) { 
+    alert("กรุณากรอกชื่อ");
+    document.getElementById("custName").focus(); 
+    return; 
+  }
+  if (!cart.length) {
+    alert("กรุณาเลือกเมนูก่อนสั่ง");
+    return;
+  }
+
+  // แสดงหน้าสรุปรายการสั่งซื้อ
+  showOrderSummary();
+}
+
+// ===== แสดงหน้าสรุปรายการสั่งซื้อ =====
+function showOrderSummary() {
+  const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const location = document.getElementById("custLocation").value.trim();
+  const note = document.getElementById("custNote").value.trim();
+  const total = cart.reduce((s, l) => s + l.price, 0);
+
+  // สร้าง HTML รายการสั่งซื้อ
+  const itemsHTML = cart.map((line, idx) => `
+    <div class="summary-item">
+      <div class="summary-item-icon">
+        ${line.img 
+          ? `<img src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<i data-lucide=cup-soda></i>'"/>` 
+          : '<i data-lucide="cup-soda"></i>'}
+      </div>
+      <div class="summary-item-details">
+        <div class="summary-item-name">${line.name}</div>
+        <div class="summary-item-opts">
+          <span><i data-lucide="droplet"></i> ${line.sweet}</span>
+          <span><i data-lucide="thermometer"></i> ${line.temp}</span>
+          ${line.extras && line.extras.length ? '<span><i data-lucide="plus-circle"></i> ' + line.extras.join(', ') + '</span>' : ''}
+        </div>
+      </div>
+      <div class="summary-item-price">${line.price} ฿</div>
+    </div>
+  `).join('');
+
+  // สร้าง HTML ข้อมูลลูกค้า
+  const customerHTML = `
+    <div class="summary-section">
+      <div class="summary-section-title"><i data-lucide="user"></i> ข้อมูลผู้สั่ง</div>
+      <div class="summary-customer-info">
+        <div class="summary-info-row"><strong>ชื่อ:</strong> ${name}</div>
+        ${phone ? `<div class="summary-info-row"><strong>เบอร์:</strong> ${phone}</div>` : ''}
+        ${location ? `<div class="summary-info-row"><strong>สถานที่:</strong> ${location}</div>` : ''}
+        ${note ? `<div class="summary-info-row"><strong>หมายเหตุ:</strong> ${note}</div>` : ''}
+      </div>
+    </div>
+  `;
+
+  // แสดง modal สรุปรายการ
+  const summaryModal = document.getElementById('orderSummaryModal');
+  const summaryContent = document.getElementById('orderSummaryContent');
+  
+  summaryContent.innerHTML = `
+    <div class="summary-header">
+      <h2><i data-lucide="clipboard-list"></i> สรุปรายการสั่งซื้อ</h2>
+      <p>กรุณาตรวจสอบรายการก่อนยืนยัน</p>
+    </div>
+
+    <div class="summary-section">
+      <div class="summary-section-title"><i data-lucide="shopping-bag"></i> รายการที่สั่ง (${cart.length} รายการ)</div>
+      ${itemsHTML}
+    </div>
+
+    ${customerHTML}
+
+    <div class="summary-total-section">
+      <div class="summary-total-row">
+        <span>ยอดรวมทั้งหมด</span>
+        <span class="summary-total-amount">${total} ฿</span>
+      </div>
+    </div>
+
+    <div class="summary-actions">
+      <button class="btn-summary-back" onclick="closeOrderSummary()">
+        <i data-lucide="arrow-left"></i> กลับไปแก้ไข
+      </button>
+      <button class="btn-summary-confirm" onclick="confirmOrderSubmit()">
+        <i data-lucide="check-circle"></i> ยืนยันคำสั่งซื้อ
+      </button>
+    </div>
+  `;
+
+  summaryModal.classList.add('show');
+  lucide.createIcons();
+}
+
+function closeOrderSummary() {
+  document.getElementById('orderSummaryModal').classList.remove('show');
+}
+
+// ===== ยืนยันและส่งคำสั่งซื้อจริง =====
+async function confirmOrderSubmit() {
   // Check shop state before submitting
   const { data: setting } = await sb.from("settings").select("value").eq("key", "shopOpen").single();
   const isOpen = setting ? setting.value === "true" : true;
-  if (!isOpen) { applyShopState(false); return; }
+  if (!isOpen) { 
+    closeOrderSummary();
+    applyShopState(false); 
+    return; 
+  }
 
   const name = document.getElementById("custName").value.trim();
-  if (!name) { document.getElementById("custName").focus(); return; }
-  if (!cart.length) return;
+  if (!name) { closeOrderSummary(); document.getElementById("custName").focus(); return; }
+  if (!cart.length) { closeOrderSummary(); return; }
 
-  const btn = document.getElementById("btnOrder");
+  const btn = document.querySelector('.btn-summary-confirm');
   btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader"></i> กำลังส่ง...';
+  lucide.createIcons();
+  
   const phone    = document.getElementById("custPhone").value.trim();
   const location = document.getElementById("custLocation").value.trim();
   let note       = document.getElementById("custNote").value.trim();
@@ -1169,7 +1391,7 @@ async function submitOrder() {
   }]).select().single();
 
   btn.disabled = false;
-  if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
+  if (error) { alert("เกิดข้อผิดพลาด: " + error.message); closeOrderSummary(); return; }
 
   localStorage.setItem("myOrderId", data.id);
   localStorage.setItem("myOrderStatus", "pending");
@@ -1180,6 +1402,8 @@ async function submitOrder() {
   document.getElementById("custLocation").value = "";
   document.getElementById("custPhone").value    = "";
   document.getElementById("custNote").value     = "";
+
+  closeOrderSummary(); // ปิดหน้าสรุป
 
   document.getElementById("modalOrderId").textContent = `#${String(data.order_seq).padStart(4,"0")}`;
   document.getElementById("modalSummary").innerHTML = items.map(i=>`${i.name} (${i.sweet}·${i.temp})`).join("<br>");
