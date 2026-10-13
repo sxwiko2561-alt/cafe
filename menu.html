@@ -389,6 +389,15 @@
 
     /* ===== LINE ITEM CART ===== */
     .cart-item-opts { font-size: 0.72rem; color: var(--text-3); margin-top: 2px; }
+    .cart-item-note { 
+      font-size: 0.7rem; color: var(--text-2); margin-top: 4px;
+      display: flex; align-items: center; gap: 4px;
+      background: #fffbeb; padding: 4px 8px; border-radius: 6px;
+      border-left: 2px solid #f59e0b;
+    }
+    .cart-item-note i {
+      width: 12px; height: 12px; stroke: #f59e0b; flex-shrink: 0;
+    }
     .btn-remove {
       width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
       background: #fee2e2; border: none; cursor: pointer; color: #ef4444;
@@ -609,6 +618,15 @@
     .summary-item-opts i {
       width: 12px; height: 12px; stroke: currentColor;
     }
+    .summary-item-note {
+      font-size: 0.72rem; color: var(--text-2); margin-top: 6px;
+      display: flex; align-items: flex-start; gap: 4px;
+      background: #fffbeb; padding: 6px 10px; border-radius: 8px;
+      border-left: 3px solid #f59e0b; line-height: 1.4;
+    }
+    .summary-item-note i {
+      width: 14px; height: 14px; stroke: #f59e0b; flex-shrink: 0; margin-top: 2px;
+    }
     .summary-item-price {
       font-size: 0.9rem; font-weight: 600; color: var(--accent);
       flex-shrink: 0;
@@ -804,6 +822,10 @@
       <div class="tag-group" id="optExtraTags">
         <button class="tag" data-val="แยกน้ำแข็ง" data-extra="5"><i data-lucide="glass-water"></i>แยกน้ำแข็ง <span style="font-size:0.72rem;opacity:0.7">+5฿</span></button>
       </div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-section-label"><i data-lucide="message-square"></i> หมายเหตุแก้วนี้</div>
+      <textarea id="optItemNote" placeholder="เช่น ไม่ใส่น้ำแข็ง, หวานน้อย, เพิ่มนม..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:inherit;background:var(--bg);color:var(--text);resize:none;height:60px;"></textarea>
     </div>
     <button class="btn-add-to-cart" onclick="confirmAddToCart()">เพิ่มลงตะกร้า</button>
   </div>
@@ -1092,6 +1114,8 @@ function confirmAddToCart() {
   if (!optModalItem) return;
   const extraPrice = optTempExtra + optExtras.reduce((s, e) => s + e.price, 0);
   const extraNames = optExtras.map(e => e.name);
+  const itemNote = document.getElementById("optItemNote").value.trim(); // เก็บหมายเหตุแก้วนี้
+  
   cart.push({
     lineId: Date.now() + Math.random(),
     menuId: optModalItem.id,
@@ -1101,8 +1125,11 @@ function confirmAddToCart() {
     sweet:  optSweet,
     temp:   optTemp,
     extras: extraNames,
+    note:   itemNote, // บันทึกหมายเหตุ
   });
+  
   document.getElementById("optModalOverlay").classList.remove("show");
+  document.getElementById("optItemNote").value = ""; // ล้างหมายเหตุ
   renderCart();
   const fab = document.querySelector(".fab");
   fab.style.transform = "scale(1.2)";
@@ -1124,6 +1151,7 @@ function renderCart() {
   let sum = 0;
   const rows = cart.map(line => {
     sum += line.price;
+    const noteHTML = line.note ? `<div class="cart-item-note"><i data-lucide="message-square"></i> ${line.note}</div>` : '';
     return `<div class="cart-row">
       ${line.img
         ? `<img class="cart-thumb" src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>`
@@ -1131,6 +1159,7 @@ function renderCart() {
       <div style="flex:1;min-width:0">
         <div class="cart-item-name">${line.name}</div>
         <div class="cart-item-opts">${line.sweet} · ${line.temp}${line.extras && line.extras.length ? ' · ' + line.extras.join(' · ') : ''}</div>
+        ${noteHTML}
       </div>
       <span class="item-price">${line.price} ฿</span>
       <button class="btn-remove" onclick="removeLineItem(${line.lineId})">×</button>
@@ -1268,7 +1297,9 @@ function showOrderSummary() {
   const total = cart.reduce((s, l) => s + l.price, 0);
 
   // สร้าง HTML รายการสั่งซื้อ
-  const itemsHTML = cart.map((line, idx) => `
+  const itemsHTML = cart.map((line, idx) => {
+    const noteHTML = line.note ? `<div class="summary-item-note"><i data-lucide="message-square"></i> ${line.note}</div>` : '';
+    return `
     <div class="summary-item">
       <div class="summary-item-icon">
         ${line.img 
@@ -1282,10 +1313,11 @@ function showOrderSummary() {
           <span><i data-lucide="thermometer"></i> ${line.temp}</span>
           ${line.extras && line.extras.length ? '<span><i data-lucide="plus-circle"></i> ' + line.extras.join(', ') + '</span>' : ''}
         </div>
+        ${noteHTML}
       </div>
       <div class="summary-item-price">${line.price} ฿</div>
     </div>
-  `).join('');
+  `}).join('');
 
   // สร้าง HTML ข้อมูลลูกค้า
   const customerHTML = `
@@ -1367,7 +1399,7 @@ async function confirmOrderSubmit() {
   let note       = document.getElementById("custNote").value.trim();
 
   const total = cart.reduce((s, l) => s + l.price, 0);
-  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp, extras: l.extras || [] }));
+  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp, extras: l.extras || [], note: l.note || '' }));
   const sweetDisplay = [...new Set(cart.map(l => l.sweet))].join(", ");
   const tempDisplay  = [...new Set(cart.map(l => l.temp))].join(", ");
 
