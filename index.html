@@ -368,10 +368,11 @@
     <button class="btn-clear" onclick="clearDone()">🗑 ล้างที่เสร็จแล้ว</button>
   </div>
   <div class="filter-bar">
-    <button class="ftab active" id="ftab-all"       onclick="setFilter('all',this)">ทั้งหมด <span class="cnt-num" id="cntAll">0</span></button>
-    <button class="ftab"        id="ftab-accepted"  onclick="setFilter('accepted',this)">⏱ เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
-    <button class="ftab"        id="ftab-ready"     onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
-    <button class="ftab"        id="ftab-cancelled" onclick="setFilter('cancelled',this)">❌ ยกเลิก</button>
+    <button class="ftab active" id="ftab-all"        onclick="setFilter('all',this)">ทั้งหมด <span class="cnt-num" id="cntAll">0</span></button>
+    <button class="ftab"        id="ftab-accepted"   onclick="setFilter('accepted',this)">⏱ เตรียม <span class="cnt hidden" id="cntAccepted"></span></button>
+    <button class="ftab"        id="ftab-delivering" onclick="setFilter('delivering',this)">🚗 กำลังไปส่ง <span class="cnt hidden" id="cntDelivering"></span></button>
+    <button class="ftab"        id="ftab-ready"      onclick="setFilter('ready',this)">✅ พร้อมรับ</button>
+    <button class="ftab"        id="ftab-cancelled"  onclick="setFilter('cancelled',this)">❌ ยกเลิก</button>
   </div>
 
   <!-- ORDER LIST -->
@@ -657,11 +658,12 @@ function locationBadge(loc) {
 }
 
 function renderOrders() {
-  const pending   = allOrders.filter(o => o.status === "pending");
-  const accepted  = allOrders.filter(o => o.status === "accepted");
-  const ready     = allOrders.filter(o => o.status === "ready");
-  const active    = allOrders.filter(o => o.status !== "cancelled");
-  const revenue   = active.reduce((s, o) => s + (o.total || 0), 0);
+  const pending    = allOrders.filter(o => o.status === "pending");
+  const accepted   = allOrders.filter(o => o.status === "accepted");
+  const delivering = allOrders.filter(o => o.status === "delivering");
+  const ready      = allOrders.filter(o => o.status === "ready" || o.status === "delivered");
+  const active     = allOrders.filter(o => o.status !== "cancelled");
+  const revenue    = active.reduce((s, o) => s + (o.total || 0), 0);
 
   document.getElementById("statTotal").textContent   = active.length;
   document.getElementById("statPending").textContent = pending.length;
@@ -669,7 +671,7 @@ function renderOrders() {
 
   // อัปเดต badge:
   // - ทั้งหมด = ตัวเลข
-  // - รอรับ, เตรียม = จุดแดง
+  // - รอรับ, เตรียม, กำลังไปส่ง = จุดแดง
   // - พร้อมรับ = ไม่มีอะไร
   
   const cntAllEl = document.getElementById("cntAll");
@@ -686,8 +688,9 @@ function renderOrders() {
     if (count > 0) el.classList.remove("hidden");
     else el.classList.add("hidden");
   }
-  setDot("cntPending",  pending.length);
-  setDot("cntAccepted", accepted.length);
+  setDot("cntPending",    pending.length);
+  setDot("cntAccepted",   accepted.length);
+  setDot("cntDelivering", delivering.length);
 
   // re-activate tab ที่ถูก filter อยู่ (realtime อาจ reset active class)
   document.querySelectorAll(".ftab").forEach(b => b.classList.remove("active"));
@@ -696,7 +699,9 @@ function renderOrders() {
 
   const filtered = currentFilter === "all"
     ? allOrders.filter(o => o.status === "pending")
-    : allOrders.filter(o => o.status === currentFilter);
+    : currentFilter === "ready"
+      ? allOrders.filter(o => o.status === "ready" || o.status === "delivered")
+      : allOrders.filter(o => o.status === currentFilter);
   const list = document.getElementById("orderList");
 
   if (filtered.length === 0) {
