@@ -1486,8 +1486,14 @@ const STATUS_LABEL = {
 function getStepsForOrder(order) {
   const location = order.location || "";
   const pickupKeywords = [
+    // คำพื้นฐาน
     'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
-    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+    // คำที่มี "เอา" (ลูกค้าจะไปเอาเอง)
+    'ไปเอา', 'ไปเอาเอง', 'จะไปเอา', 'เดี๋ยวไปเอา', 'มาเอา', 'มาเอาเอง',
+    // สถานที่
+    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน', 'ถึงร้าน',
+    // คำที่บ่งบอกว่าลูกค้าจะมาเอง
+    'ไปถึง', 'ขับไป', 'แวะรับ', 'แวะเอา'
   ];
   const isPickup = pickupKeywords.some(keyword => 
     location.toLowerCase().includes(keyword.toLowerCase())

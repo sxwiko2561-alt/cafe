@@ -710,8 +710,14 @@ function locationBadge(loc) {
   
   // เช็คว่าเป็น pickup หรือไม่ (ใช้ keywords เดียวกับ needsDelivery)
   const pickupKeywords = [
+    // คำพื้นฐาน
     'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
-    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+    // คำที่มี "เอา" (ลูกค้าจะไปเอาเอง)
+    'ไปเอา', 'ไปเอาเอง', 'จะไปเอา', 'เดี๋ยวไปเอา', 'มาเอา', 'มาเอาเอง',
+    // สถานที่
+    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน', 'ถึงร้าน',
+    // คำที่บ่งบอกว่าลูกค้าจะมาเอง
+    'ไปถึง', 'ขับไป', 'แวะรับ', 'แวะเอา'
   ];
   const locLower = loc.toLowerCase();
   const isPickup = pickupKeywords.some(keyword => locLower.includes(keyword.toLowerCase()));
@@ -788,8 +794,14 @@ function renderOrders() {
   function needsDelivery(location) {
     if (!location) return false;
     const pickupKeywords = [
+      // คำพื้นฐาน
       'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
-      'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+      // คำที่มี "เอา" (ลูกค้าจะไปเอาเอง)
+      'ไปเอา', 'ไปเอาเอง', 'จะไปเอา', 'เดี๋ยวไปเอา', 'มาเอา', 'มาเอาเอง',
+      // สถานที่
+      'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน', 'ถึงร้าน',
+      // คำที่บ่งบอกว่าลูกค้าจะมาเอง
+      'ไปถึง', 'ขับไป', 'แวะรับ', 'แวะเอา'
     ];
     const loc = location.toLowerCase().trim();
     return !pickupKeywords.some(keyword => loc.includes(keyword.toLowerCase()));
