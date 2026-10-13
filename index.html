@@ -627,7 +627,9 @@ async function cancelOrder(id) {
   await loadOrders();
 }
 async function clearDone() {
+  if (!confirm("ยืนยันล้างออเดอร์ที่เสร็จแล้ว?")) return;
   await sb.from("orders").delete().eq("status", "ready");
+  await sb.from("orders").delete().eq("status", "delivered");
   loadOrders();
 }
 

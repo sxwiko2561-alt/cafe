@@ -1469,19 +1469,35 @@ const STATUS_LABEL = {
 // Dynamic steps based on order type
 function getStepsForOrder(order) {
   const location = order.location || "";
-  const isDelivery = location && !['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'].some(keyword => 
+  const pickupKeywords = ['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'];
+  const isPickup = pickupKeywords.some(keyword => 
     location.toLowerCase().includes(keyword.toLowerCase())
   );
   
-  if (isDelivery) {
-    return {
-      steps: ["สั่งแล้ว", "ยืนยัน", "ไปส่ง", "ส่งแล้ว"],
-      statusMap: { pending: 0, accepted: 1, delivering: 2, delivered: 3, ready: 3 }
-    };
-  } else {
+  if (isPickup) {
+    // รับเอง: 3 ขั้น (สั่ง → ยืนยัน → พร้อมรับ)
+    // delivering/delivered = ถือว่า "พร้อมรับ" ทันที (กรณีแอดมินกดผิด)
     return {
       steps: ["สั่งแล้ว", "ยืนยัน", "พร้อมรับ"],
-      statusMap: { pending: 0, accepted: 1, ready: 2, delivered: 2 }
+      statusMap: { 
+        pending: 0, 
+        accepted: 1, 
+        delivering: 2,  // ข้ามไปพร้อมรับเลย
+        delivered: 2,   // ข้ามไปพร้อมรับเลย
+        ready: 2 
+      }
+    };
+  } else {
+    // ส่ง: 4 ขั้น (สั่ง → ยืนยัน → ไปส่ง → ส่งแล้ว)
+    return {
+      steps: ["สั่งแล้ว", "ยืนยัน", "ไปส่ง", "ส่งแล้ว"],
+      statusMap: { 
+        pending: 0, 
+        accepted: 1, 
+        delivering: 2, 
+        delivered: 3, 
+        ready: 3  // ready = delivered สำหรับ delivery orders
+      }
     };
   }
 }
