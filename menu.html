@@ -1276,13 +1276,29 @@ async function submitAddMore(myId, newItems, newTotal) {
 
 // ===== SUBMIT =====
 async function submitOrder() {
-  // ตรวจสอบข้อมูลก่อน
+  // ตรวจสอบข้อมูลก่อน - บังคับให้กรอกทั้ง 3 ช่อง
   const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const location = document.getElementById("custLocation").value.trim();
+  
   if (!name) { 
-    alert("กรุณากรอกชื่อ");
+    alert("⚠️ กรุณากรอกชื่อ");
     document.getElementById("custName").focus(); 
     return; 
   }
+  
+  if (!location) { 
+    alert("⚠️ กรุณากรอกสถานที่จัด หรือ มารับเอง");
+    document.getElementById("custLocation").focus(); 
+    return; 
+  }
+  
+  if (!phone) { 
+    alert("⚠️ กรุณากรอกเบอร์โทร");
+    document.getElementById("custPhone").focus(); 
+    return; 
+  }
+  
   if (!cart.length) {
     alert("กรุณาเลือกเมนูก่อนสั่ง");
     return;
