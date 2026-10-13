@@ -202,8 +202,10 @@
       content: ''; position: absolute; left: 0; top: 0; bottom: 0;
       width: 3px; background: var(--yellow);
     }
-    .order-card.accepted::before { background: var(--green); }
-    .order-card.ready::before    { background: var(--blue); }
+    .order-card.accepted::before   { background: var(--green); }
+    .order-card.delivering::before { background: #3b82f6; }
+    .order-card.ready::before      { background: var(--blue); }
+    .order-card.delivered::before  { background: var(--green); }
 
     .card-top {
       display: flex; align-items: center; gap: 8px;
@@ -256,9 +258,11 @@
       font-size: 0.72rem; font-weight: 600;
       padding: 3px 10px; border-radius: 8px;
     }
-    .status-chip.pending  { background: var(--yellow-light); color: var(--yellow); }
-    .status-chip.accepted { background: var(--green-light);  color: var(--green); }
-    .status-chip.ready    { background: var(--blue-light);   color: var(--blue); }
+    .status-chip.pending    { background: var(--yellow-light); color: var(--yellow); }
+    .status-chip.accepted   { background: var(--green-light);  color: var(--green); }
+    .status-chip.delivering { background: #dbeafe; color: #3b82f6; }
+    .status-chip.ready      { background: var(--blue-light);   color: var(--blue); }
+    .status-chip.delivered  { background: #d1fae5; color: #059669; }
 
     .action-row { display: flex; gap: 7px; margin-top: 10px; }
     .btn-action {
@@ -270,9 +274,13 @@
       display: flex; align-items: center; justify-content: center; gap: 5px;
     }
     .btn-action.accept { background: var(--green-light); color: var(--green); border-color: #a7f3d0; }
-    .btn-action.accept:hover  { background: #d1fae5; }
+    .btn-action.accept:hover     { background: #d1fae5; }
+    .btn-action.delivering { background: #dbeafe; color: #3b82f6; border-color: #93c5fd; }
+    .btn-action.delivering:hover { background: #bfdbfe; }
+    .btn-action.delivered { background: #d1fae5; color: #059669; border-color: #6ee7b7; }
+    .btn-action.delivered:hover  { background: #a7f3d0; }
     .btn-action.ready  { background: var(--blue-light);  color: var(--blue);  border-color: #bfdbfe; }
-    .btn-action.ready:hover   { background: #dbeafe; }
+    .btn-action.ready:hover      { background: #dbeafe; }
     .btn-action:active { opacity: 0.7; }
 
     .empty-state {
@@ -592,10 +600,22 @@ async function acceptOrder(id) {
   await sb.from("orders").update({ status: "accepted" }).eq("id", id);
   await loadOrders();
 }
+async function deliveringOrder(id) {
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.3";
+  await sb.from("orders").update({ status: "delivering" }).eq("id", id);
+  await loadOrders();
+}
 async function readyOrder(id) {
   const card = document.getElementById("card-" + id);
   if (card) card.style.opacity = "0.3";
   await sb.from("orders").update({ status: "ready" }).eq("id", id);
+  await loadOrders();
+}
+async function deliveredOrder(id) {
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.3";
+  await sb.from("orders").update({ status: "delivered" }).eq("id", id);
   await loadOrders();
 }
 async function cancelOrder(id) {
@@ -685,13 +705,26 @@ function renderOrders() {
   }
 
   const statusChip = {
-    pending:   `<span class="status-chip pending">⏳ รอรับออเดอร์</span>`,
-    accepted:  `<span class="status-chip accepted">⏱ กำลังเตรียม</span>`,
-    ready:     `<span class="status-chip ready">✅ พร้อมรับแล้ว</span>`,
-    cancelled: `<span class="status-chip" style="background:#fee2e2;color:#ef4444">❌ ยกเลิกแล้ว</span>`,
+    pending:    `<span class="status-chip pending">⏳ รอรับออเดอร์</span>`,
+    accepted:   `<span class="status-chip accepted">⏱ กำลังเตรียม</span>`,
+    delivering: `<span class="status-chip delivering">🚗 กำลังไปส่ง</span>`,
+    ready:      `<span class="status-chip ready">✅ พร้อมรับแล้ว</span>`,
+    delivered:  `<span class="status-chip delivered">✅ ส่งเรียบร้อย</span>`,
+    cancelled:  `<span class="status-chip" style="background:#fee2e2;color:#ef4444">❌ ยกเลิกแล้ว</span>`,
   };
 
-  list.innerHTML = filtered.map(o => `
+  // ตรวจสอบว่าออเดอร์ต้องส่งหรือไม่
+  function needsDelivery(location) {
+    if (!location) return false;
+    const pickupKeywords = ['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'];
+    const loc = location.toLowerCase().trim();
+    return !pickupKeywords.some(keyword => loc.includes(keyword.toLowerCase()));
+  }
+
+  list.innerHTML = filtered.map(o => {
+    const isDelivery = needsDelivery(o.location);
+    
+    return `
     <div class="order-card ${o.status}" id="card-${o.id}">
       <div class="card-top">
         <span class="order-seq">#${String(o.order_seq || "").padStart(4,"0")}</span>
@@ -720,11 +753,13 @@ function renderOrders() {
 
       <div class="action-row">
         ${o.status === "pending"  ? `<button class="btn-action accept" onclick="acceptOrder('${o.id}')">✓ รับออเดอร์</button>` : ""}
-        ${o.status === "accepted" ? `<button class="btn-action ready"  onclick="readyOrder('${o.id}')">🛍️ พร้อมแล้ว</button>` : ""}
-        ${o.status !== "ready" && o.status !== "cancelled" ? `<button class="btn-action" style="background:#fee2e2;color:#ef4444;border:1.5px solid #fecaca" onclick="cancelOrder('${o.id}')">✕ ยกเลิก</button>` : ""}
+        ${o.status === "accepted" && isDelivery ? `<button class="btn-action delivering" onclick="deliveringOrder('${o.id}')">🚗 กำลังไปส่ง</button>` : ""}
+        ${o.status === "accepted" && !isDelivery ? `<button class="btn-action ready" onclick="readyOrder('${o.id}')">🛍️ พร้อมรับแล้ว</button>` : ""}
+        ${o.status === "delivering" ? `<button class="btn-action delivered" onclick="deliveredOrder('${o.id}')">✅ ส่งเรียบร้อย</button>` : ""}
+        ${o.status !== "ready" && o.status !== "delivered" && o.status !== "cancelled" ? `<button class="btn-action" style="background:#fee2e2;color:#ef4444;border:1.5px solid #fecaca" onclick="cancelOrder('${o.id}')">✕ ยกเลิก</button>` : ""}
       </div>
     </div>
-  `).join("");
+  `}).join("");
 }
 
 // ===== INIT =====
