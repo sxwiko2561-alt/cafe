@@ -1485,7 +1485,10 @@ const STATUS_LABEL = {
 // Dynamic steps based on order type
 function getStepsForOrder(order) {
   const location = order.location || "";
-  const pickupKeywords = ['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'];
+  const pickupKeywords = [
+    'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
+    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+  ];
   const isPickup = pickupKeywords.some(keyword => 
     location.toLowerCase().includes(keyword.toLowerCase())
   );

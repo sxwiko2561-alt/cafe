@@ -47,6 +47,20 @@
       --red: #f87171;
       --red-light: #450a0a;
     }
+    
+    /* Dark mode: เพิ่มความชัดเจนให้กรอบ */
+    body.dark-mode .filter-bar {
+      border: 1px solid #404040;
+    }
+    body.dark-mode .ftab {
+      border: 1px solid transparent;
+    }
+    body.dark-mode .ftab:hover {
+      border-color: #505050;
+    }
+    body.dark-mode .ftab.active {
+      border-color: #f5f5f5;
+    }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Sarabun', 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; transition: background 0.3s, color 0.3s; }
@@ -693,10 +707,16 @@ function formatTime(ts) {
 
 function locationBadge(loc) {
   if (!loc) return '';
-  const isDelivery = loc && !loc.includes("มารับ") && !loc.includes("เคาน์เตอร์") && loc.trim() !== "";
-  // ถ้าลูกค้าพิมพ์ที่อยู่ = ส่ง, ถ้าพิมพ์ว่ามารับ/เคาน์เตอร์ = รับเอง
-  const pickup = loc.toLowerCase().includes("รับ") || loc.toLowerCase().includes("counter") || loc.toLowerCase().includes("เคาน์");
-  if (pickup) {
+  
+  // เช็คว่าเป็น pickup หรือไม่ (ใช้ keywords เดียวกับ needsDelivery)
+  const pickupKeywords = [
+    'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
+    'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+  ];
+  const locLower = loc.toLowerCase();
+  const isPickup = pickupKeywords.some(keyword => locLower.includes(keyword.toLowerCase()));
+  
+  if (isPickup) {
     return `<div class="location-badge pickup">🏃 รับที่เคาน์เตอร์ &nbsp;·&nbsp; ${loc}</div>`;
   } else {
     return `<div class="location-badge delivery">🛵 ส่ง &nbsp;·&nbsp; ${loc}</div>`;
@@ -767,7 +787,10 @@ function renderOrders() {
   // ตรวจสอบว่าออเดอร์ต้องส่งหรือไม่
   function needsDelivery(location) {
     if (!location) return false;
-    const pickupKeywords = ['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'];
+    const pickupKeywords = [
+      'มารับเอง', 'มารับ', 'ไปรับเอง', 'ไปรับ', 'รับเอง', 'เอาเอง',
+      'เคาน์เตอร์', 'counter', 'pickup', 'ที่ร้าน', 'หน้าร้าน'
+    ];
     const loc = location.toLowerCase().trim();
     return !pickupKeywords.some(keyword => loc.includes(keyword.toLowerCase()));
   }
