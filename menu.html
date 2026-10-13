@@ -107,13 +107,17 @@
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .osc-icon-wrap.pending  { background: #fffbeb; }
-    .osc-icon-wrap.accepted { background: #f0fdf4; }
-    .osc-icon-wrap.ready    { background: #eff6ff; }
+    .osc-icon-wrap.pending    { background: #fffbeb; }
+    .osc-icon-wrap.accepted   { background: #f0fdf4; }
+    .osc-icon-wrap.delivering { background: #dbeafe; }
+    .osc-icon-wrap.ready      { background: #eff6ff; }
+    .osc-icon-wrap.delivered  { background: #d1fae5; }
     .osc-icon-wrap svg { width: 20px; height: 20px; stroke-width: 2; }
-    .osc-icon-wrap.pending  svg { stroke: #d97706; }
-    .osc-icon-wrap.accepted svg { stroke: #16a34a; }
-    .osc-icon-wrap.ready    svg { stroke: #2563eb; }
+    .osc-icon-wrap.pending    svg { stroke: #d97706; }
+    .osc-icon-wrap.accepted   svg { stroke: #16a34a; }
+    .osc-icon-wrap.delivering svg { stroke: #3b82f6; }
+    .osc-icon-wrap.ready      svg { stroke: #2563eb; }
+    .osc-icon-wrap.delivered  svg { stroke: #059669; }
     .osc-title { font-size: 0.92rem; font-weight: 600; }
     .osc-sub   { font-size: 0.75rem; color: var(--text-2); margin-top: 2px; }
 
@@ -696,7 +700,7 @@
 </header>
 
 <!-- MY ORDER STATUS -->
-<div id="myOrderBar" style="padding:0 16px"></div>
+<div id="myOrderBar"></div>
 
 <!-- CLOSED OVERLAY -->
 <div class="closed-overlay" id="closedOverlay">
@@ -1445,10 +1449,42 @@ async function confirmOrderSubmit() {
 }
 
 // ===== ORDER TRACKER =====
-const STATUS_ICON  = { pending:"clock", accepted:"chef-hat", ready:"package-check", cancelled:"x-circle" };
-const STATUS_LABEL = { pending:"รอการยืนยัน", accepted:"กำลังเตรียม", ready:"พร้อมรับแล้ว!", cancelled:"ออเดอร์ถูกยกเลิก" };
-const STATUS_STEPS = ["สั่งแล้ว","ยืนยัน","พร้อมรับ"];
-const STATUS_STEP_NUM = { pending:0, accepted:1, ready:2, cancelled:0 };
+const STATUS_ICON  = { 
+  pending: "clock", 
+  accepted: "chef-hat", 
+  delivering: "truck", 
+  ready: "package-check", 
+  delivered: "check-circle",
+  cancelled: "x-circle" 
+};
+const STATUS_LABEL = { 
+  pending: "รอการยืนยัน", 
+  accepted: "กำลังเตรียม", 
+  delivering: "กำลังไปส่ง", 
+  ready: "พร้อมรับแล้ว!", 
+  delivered: "ส่งเรียบร้อย!",
+  cancelled: "ออเดอร์ถูกยกเลิก" 
+};
+
+// Dynamic steps based on order type
+function getStepsForOrder(order) {
+  const location = order.location || "";
+  const isDelivery = location && !['มารับเอง', 'มารับ', 'เคาน์เตอร์', 'counter', 'pickup', 'รับเอง', 'เอาเอง'].some(keyword => 
+    location.toLowerCase().includes(keyword.toLowerCase())
+  );
+  
+  if (isDelivery) {
+    return {
+      steps: ["สั่งแล้ว", "ยืนยัน", "ไปส่ง", "ส่งแล้ว"],
+      statusMap: { pending: 0, accepted: 1, delivering: 2, delivered: 3, ready: 3 }
+    };
+  } else {
+    return {
+      steps: ["สั่งแล้ว", "ยืนยัน", "พร้อมรับ"],
+      statusMap: { pending: 0, accepted: 1, ready: 2, delivered: 2 }
+    };
+  }
+}
 
 let lastKnownStatus   = localStorage.getItem("myOrderStatus") || "";
 let lastRenderedStatus = "";
@@ -1458,14 +1494,16 @@ function renderOrderBar(order) {
   if (!bar || !order) return;
   const st = order.status || "pending";
   const items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
-  const step = STATUS_STEP_NUM[st] ?? 0;
+  
+  const { steps, statusMap } = getStepsForOrder(order);
+  const step = statusMap[st] ?? 0;
 
-  const stepHTML = STATUS_STEPS.map((s,i) => `
+  const stepHTML = steps.map((s,i) => `
     <div class="step-item">
       <div class="step-dot ${i<=step?"done":""}"></div>
       <div class="step-label ${i===step?"active":""}">${s}</div>
     </div>
-    ${i < STATUS_STEPS.length-1 ? `<div class="step-line ${i<step?"done":""}"></div>` : ""}
+    ${i < steps.length-1 ? `<div class="step-line ${i<step?"done":""}"></div>` : ""}
   `).join("");
 
   bar.style.display = "block";
@@ -1475,7 +1513,7 @@ function renderOrderBar(order) {
     bar.innerHTML = `
       <div class="order-status-card" style="border:1.5px solid #fecaca;background:#fff5f5">
         <div class="osc-top">
-          <div class="osc-icon-wrap" style="background:#fee2e2"><i data-lucide="x-circle" style="stroke:#ef4444"></i></div>
+          <div class="osc-icon-wrap cancelled" style="background:#fee2e2"><i data-lucide="x-circle" style="stroke:#ef4444"></i></div>
           <div>
             <div class="osc-title" style="color:#ef4444">ออเดอร์ถูกยกเลิก</div>
             <div class="osc-sub">ออเดอร์ #${String(order.order_seq || order.id).padStart(4,"0")} · ${order.name}</div>
@@ -1499,7 +1537,7 @@ function renderOrderBar(order) {
         </div>
       </div>
       <div class="step-bar">${stepHTML}</div>
-      ${st === "ready" ? `<button class="btn-new-order" onclick="clearMyOrder()">รับของแล้ว — สั่งใหม่</button>` : ""}
+      ${st === "ready" || st === "delivered" ? `<button class="btn-new-order" onclick="clearMyOrder()">รับของแล้ว — สั่งใหม่</button>` : ""}
       ${st === "pending" ? `<button class="btn-new-order" style="background:#1a1a1a;margin-top:8px" onclick="addMoreToOrder()">+ สั่งเพิ่ม</button>` : ""}
     </div>`;
   lucide.createIcons();
@@ -1515,7 +1553,10 @@ async function checkMyOrderStatus() {
     return;
   }
   if (data.status !== lastKnownStatus && lastKnownStatus !== "") {
-    if (data.status === "accepted" || data.status === "ready") playNotify();
+    // แจ้งเตือนทุกครั้งที่สถานะเปลี่ยน
+    if (data.status === "accepted" || data.status === "delivering" || data.status === "ready" || data.status === "delivered") {
+      playNotify();
+    }
   }
   lastKnownStatus = data.status;
   localStorage.setItem("myOrderStatus", data.status);
