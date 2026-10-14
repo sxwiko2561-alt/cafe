@@ -600,8 +600,8 @@ function loadTheme() {
 // ===== LINE MESSAGING API =====
 async function sendLINEMessage(message) {
   try {
-    // เรียก Netlify Function แทนการเรียก LINE API โดยตรง (แก้ปัญหา CORS)
-    const response = await fetch('/.netlify/functions/line-notify', {
+    // เรียก Vercel Serverless Function (ฟรี 100%)
+    const response = await fetch('/api/line-notify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
