@@ -598,30 +598,23 @@ function loadTheme() {
 }
 
 // ===== LINE MESSAGING API =====
-const LINE_CONFIG = {
-  channelAccessToken: "SUdkQfzrN68SXhqrjDGBdvwDqIkb4/cpCyGnvJSGRHnnI2COc/GLuHV3NRt+6muTxwVcYWynrszIi5xG7J1HoWQCNjJ9su8Z+WNoAaXeIyQsdiA7gRNQJ5EbBDEGACdmTulRn8Wcfo5PBGYGBN+VZwdB04t89/1O/w1cDnyilFU="
-};
-
 async function sendLINEMessage(message) {
   try {
-    const response = await fetch('https://api.line.me/v2/bot/message/broadcast', {
+    // เรียก Netlify Function แทนการเรียก LINE API โดยตรง (แก้ปัญหา CORS)
+    const response = await fetch('/.netlify/functions/line-notify', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LINE_CONFIG.channelAccessToken}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        messages: [{
-          type: 'text',
-          text: message
-        }]
-      })
+      body: JSON.stringify({ message })
     });
     
+    const result = await response.json();
+    
     if (!response.ok) {
-      console.error('LINE API error:', response.status, await response.text());
+      console.error('LINE notification error:', response.status, result);
     } else {
-      console.log('✅ LINE notification sent successfully');
+      console.log('✅ LINE notification sent successfully:', result);
     }
   } catch (error) {
     console.error('LINE notification error:', error);
