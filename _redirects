@@ -1,0 +1,2 @@
+# Redirect all GitHub Pages traffic to Vercel
+https://sxwiko2561-alt.github.io/cafe/* https://cafe-ruddy-six.vercel.app/:splat 301!

@@ -1,0 +1,5 @@
+name: Send LINE Notification  
+  
+on:  
+  repository_dispatch:  
+    types: [new-order] 
