@@ -1791,17 +1791,15 @@ document.addEventListener("visibilitychange", () => {
 
 <style>
 .contact-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  border-top: 1px solid #e5e5e5;
-  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 20px 16px 40px;
+  margin-top: 40px;
   display: flex;
   gap: 10px;
-  z-index: 100;
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .contact-btn {
@@ -1810,12 +1808,12 @@ document.addEventListener("visibilitychange", () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.15s;
   font-family: 'Sarabun', sans-serif;
 }
 
@@ -1827,32 +1825,23 @@ document.addEventListener("visibilitychange", () => {
 .line-btn {
   background: #06C755;
   color: #fff;
+  border: 2px solid #06C755;
 }
 
-.line-btn:hover {
+.line-btn:active {
   background: #05b34c;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(6, 199, 85, 0.3);
+  border-color: #05b34c;
 }
 
 .phone-btn {
   background: #1a1a1a;
   color: #fff;
+  border: 2px solid #1a1a1a;
 }
 
-.phone-btn:hover {
+.phone-btn:active {
   background: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.contact-btn:active {
-  transform: scale(0.97);
-}
-
-/* เพิ่ม padding ล่างให้ content ไม่ถูกบังโดย footer */
-body {
-  padding-bottom: 70px;
+  border-color: #000;
 }
 </style>
 
