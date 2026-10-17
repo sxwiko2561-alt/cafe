@@ -1068,7 +1068,18 @@ function renderMenu() {
   document.getElementById("menuGrid").innerHTML = menuItems.map(item => {
     // ถ้าเป็นขนมและของหมด ให้แสดงแบบ disabled
     const isOutOfStock = item.isDessert && item.quantity <= 0;
-    const clickHandler = isOutOfStock ? '' : (item.isDessert ? `addDessertToCart('${item.dessertId}')` : `addToCart(${item.id})`);
+    
+    // นับจำนวนที่อยู่ในตะกร้าแล้ว
+    let inCartCount = 0;
+    if (item.isDessert) {
+      inCartCount = cart.filter(c => c.dessertId === item.dessertId).length;
+    }
+    
+    // คำนวณคงเหลือที่สั่งได้
+    const remaining = item.isDessert ? item.quantity - inCartCount : 0;
+    const isFull = item.isDessert && remaining <= 0;
+    
+    const clickHandler = (isOutOfStock || isFull) ? '' : (item.isDessert ? `addDessertToCart('${item.dessertId}')` : `addToCart(${item.id})`);
     
     // สำหรับขนม: แสดงจำนวนคงเหลือชัดเจน
     let itemNameDisplay = item.name;
@@ -1077,6 +1088,12 @@ function renderMenu() {
       if (isOutOfStock) {
         itemNameDisplay = `${item.name}<br><span style="color:#ef4444;font-size:0.75rem;font-weight:700;">❌ หมดแล้ว</span>`;
         stockStyle = 'opacity:0.5;cursor:not-allowed';
+      } else if (isFull) {
+        itemNameDisplay = `${item.name}<br><span style="color:#f59e0b;font-size:0.75rem;font-weight:700;">⚠️ ใส่ตะกร้าครบแล้ว (${item.quantity}/${item.quantity})</span>`;
+        stockStyle = 'opacity:0.7;cursor:not-allowed';
+      } else if (inCartCount > 0) {
+        itemNameDisplay = `${item.name}<br><span style="color:#10b981;font-size:0.75rem;font-weight:700;">✅ ในตะกร้า ${inCartCount} | 🔥 เหลือ ${remaining} ชิ้น</span>`;
+        stockStyle = 'cursor:pointer';
       } else {
         itemNameDisplay = `${item.name}<br><span style="color:#ef4444;font-size:0.75rem;font-weight:700;">🔥 เหลือ ${item.quantity} ชิ้น</span>`;
         stockStyle = 'cursor:pointer';
@@ -1097,7 +1114,7 @@ function renderMenu() {
       </div>
       <div class="card-body">
         <div class="card-name" style="line-height:1.4">${itemNameDisplay}</div>
-        ${!isOutOfStock ? `<button class="btn-add" onclick="event.stopPropagation();${item.isDessert?`addDessertToCart('${item.dessertId}')`:`addToCart(${item.id})`}">
+        ${(!isOutOfStock && !isFull) ? `<button class="btn-add" onclick="event.stopPropagation();${item.isDessert?`addDessertToCart('${item.dessertId}')`:`addToCart(${item.id})`}">
           <i data-lucide="plus"></i>
         </button>` : ''}
       </div>
@@ -1268,7 +1285,16 @@ function removeLineItem(lineId) {
 function addDessertToCart(dessertId) {
   const dessert = desserts.find(d => d.id === dessertId);
   if (!dessert || dessert.quantity <= 0) {
-    alert('ขนมหมดแล้ว กรุณาเลือกเมนูอื่น');
+    alert('❌ ขนมหมดแล้ว กรุณาเลือกเมนูอื่น');
+    return;
+  }
+  
+  // นับจำนวนขนมชิ้นนี้ที่อยู่ในตะกร้าแล้ว
+  const alreadyInCart = cart.filter(item => item.dessertId === dessertId).length;
+  
+  // ตรวจสอบว่าสั่งเกินสต็อกหรือไม่
+  if (alreadyInCart >= dessert.quantity) {
+    alert(`⚠️ ขนมชิ้นนี้เหลือแค่ ${dessert.quantity} ชิ้น\nคุณใส่ตะกร้าครบแล้ว!`);
     return;
   }
   
@@ -1296,7 +1322,11 @@ function renderCart() {
   const box = document.getElementById("cartBox");
   if (!cart.length) {
     box.innerHTML = `<div class="cart-empty-state"><i data-lucide="shopping-bag"></i>ยังไม่มีรายการ</div>`;
-    updateFab(0); lucide.createIcons(); return;
+    updateFab(0); 
+    lucide.createIcons(); 
+    // อัพเดทเมนูเพื่อแสดงสต็อกที่เหลือ
+    if (currentCategory === "ขนม") renderMenu();
+    return;
   }
   let sum = 0;
   const rows = cart.map(line => {
@@ -1316,7 +1346,10 @@ function renderCart() {
     </div>`;
   }).join("");
   box.innerHTML = rows + `<div class="cart-total-row"><span>รวม</span><span class="total-val">${sum} ฿</span></div>`;
-  updateFab(cart.length); lucide.createIcons();
+  updateFab(cart.length); 
+  lucide.createIcons();
+  // อัพเดทเมนูเพื่อแสดงสต็อกที่เหลือ
+  if (currentCategory === "ขนม") renderMenu();
 }
 
 function updateFab(q) {
