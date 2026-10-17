@@ -336,6 +336,34 @@
       transition: background 0.15s;
     }
     .btn-clear:hover { background: var(--red-light); }
+
+    /* ===== DESSERT MANAGEMENT ===== */
+    .dessert-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
+    .dessert-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .dessert-info { flex: 1; min-width: 0; }
+    .dessert-name { font-size: 0.88rem; font-weight: 600; margin-bottom: 2px; }
+    .dessert-meta { font-size: 0.75rem; color: var(--text-3); }
+    .dessert-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-dessert {
+      padding: 6px 12px; border-radius: 8px;
+      font-size: 0.75rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn-dessert.edit { background: var(--blue-light); color: var(--blue); border-color: #bfdbfe; }
+    .btn-dessert.edit:hover { background: #dbeafe; }
+    .btn-dessert.delete { background: var(--red-light); color: var(--red); border-color: #fecaca; }
+    .btn-dessert.delete:hover { background: #fee2e2; }
+    .dessert-qty-input {
+      width: 60px; padding: 6px 8px; text-align: center;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 0.82rem; font-family: inherit;
+    }
   </style>
 </head>
 <body>
@@ -415,6 +443,13 @@
   <div id="orderList">
     <div class="empty-state"><span class="e-emoji">📭</span>ยังไม่มีออเดอร์เข้ามา</div>
   </div>
+
+  <!-- DESSERTS MANAGEMENT -->
+  <div class="top-row" style="margin-top:32px">
+    <div class="section-label">จัดการขนม</div>
+    <button class="btn-clear" style="border-color:#a7f3d0;color:var(--green)" onclick="addDessert()">+ เพิ่มขนม</button>
+  </div>
+  <div id="dessertList"></div>
 </main>
 
 <script>
@@ -430,6 +465,7 @@ function doLogin() {
     sessionStorage.setItem("adminAuth", "1");
     document.getElementById("loginOverlay").classList.add("hidden");
     loadShopState(); loadOrders(); subscribeOrders();
+    loadDessertsList(); subscribeDesserts();
   } else {
     const inp = document.getElementById("pwInput");
     inp.classList.remove("shake"); void inp.offsetWidth;
@@ -890,9 +926,110 @@ function renderOrders() {
 // ===== INIT =====
 loadTheme(); // โหลด theme preference
 
+// ===== DESSERTS MANAGEMENT =====
+let allDesserts = [];
+
+async function loadDessertsList() {
+  const { data, error } = await sb.from("desserts").select("*").order("name_th");
+  if (error) { console.error(error); return; }
+  allDesserts = data || [];
+  renderDessertsList();
+}
+
+function renderDessertsList() {
+  const list = document.getElementById("dessertList");
+  if (!allDesserts.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:24px"><span class="e-emoji">🍪</span>ยังไม่มีขนม</div>';
+    return;
+  }
+  list.innerHTML = '<div class="dessert-grid">' + allDesserts.map(d => `
+    <div class="dessert-card">
+      <div class="dessert-info">
+        <div class="dessert-name">${d.name_th} (${d.name})</div>
+        <div class="dessert-meta">${d.price} ฿ · เหลือ ${d.quantity} ชิ้น · ${d.visible ? '✅ แสดง' : '❌ ซ่อน'}</div>
+      </div>
+      <div class="dessert-actions">
+        <input type="number" class="dessert-qty-input" value="${d.quantity}" 
+          onchange="updateDessertQty('${d.id}', this.value)" min="0" />
+        <button class="btn-dessert edit" onclick="editDessert('${d.id}')">✏️</button>
+        <button class="btn-dessert" onclick="toggleDessertVisible('${d.id}')">${d.visible ? '👁️' : '🚫'}</button>
+        <button class="btn-dessert delete" onclick="deleteDessert('${d.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('') + '</div>';
+}
+
+async function updateDessertQty(id, qty) {
+  const { error } = await sb.from("desserts").update({ quantity: parseInt(qty) || 0 }).eq("id", id);
+  if (error) console.error(error);
+  else loadDessertsList();
+}
+
+async function toggleDessertVisible(id) {
+  const dessert = allDesserts.find(d => d.id === id);
+  if (!dessert) return;
+  const { error } = await sb.from("desserts").update({ visible: !dessert.visible }).eq("id", id);
+  if (error) console.error(error);
+  else loadDessertsList();
+}
+
+async function deleteDessert(id) {
+  if (!confirm("ยืนยันลบขนม?")) return;
+  const { error } = await sb.from("desserts").delete().eq("id", id);
+  if (error) console.error(error);
+  else loadDessertsList();
+}
+
+function addDessert() {
+  const name = prompt("ชื่อขนม (EN):");
+  if (!name) return;
+  const nameTh = prompt("ชื่อขนม (TH):");
+  if (!nameTh) return;
+  const price = parseInt(prompt("ราคา (฿):") || "20");
+  const qty = parseInt(prompt("จำนวน (ชิ้น):") || "20");
+  
+  sb.from("desserts").insert([{ 
+    name: name, 
+    name_th: nameTh, 
+    price: price, 
+    quantity: qty, 
+    visible: true 
+  }]).then(({error}) => {
+    if (error) console.error(error);
+    else loadDessertsList();
+  });
+}
+
+function editDessert(id) {
+  const dessert = allDesserts.find(d => d.id === id);
+  if (!dessert) return;
+  
+  const name = prompt("ชื่อขนม (EN):", dessert.name);
+  if (!name) return;
+  const nameTh = prompt("ชื่อขนม (TH):", dessert.name_th);
+  if (!nameTh) return;
+  const price = parseInt(prompt("ราคา (฿):", dessert.price) || dessert.price);
+  
+  sb.from("desserts").update({ 
+    name: name, 
+    name_th: nameTh, 
+    price: price 
+  }).eq("id", id).then(({error}) => {
+    if (error) console.error(error);
+    else loadDessertsList();
+  });
+}
+
+function subscribeDesserts() {
+  sb.channel("desserts-admin")
+    .on("postgres_changes", { event: "*", schema: "public", table: "desserts" }, () => loadDessertsList())
+    .subscribe();
+}
+
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
   loadShopState(); loadOrders(); subscribeOrders();
+  loadDessertsList(); subscribeDesserts();
   requestNotifyPermission();
 } else {
   renderShopUI();

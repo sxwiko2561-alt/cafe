@@ -736,6 +736,7 @@
     <button class="tab-btn" data-category="มัทฉะ">มัทฉะ</button>
     <button class="tab-btn" data-category="โซดา">โซดา</button>
     <button class="tab-btn" data-category="มะพร้าว">มะพร้าว</button>
+    <button class="tab-btn" data-category="ขนม">ขนม</button>
   </div>
 
   <!-- MENU -->
@@ -933,8 +934,36 @@ const MENU = {
     { id: 301, name: "มะพร้าวสด", price: 35, img: "images/มะพร้าว/coconut-fresh.png", hasBlend: true },
     // 40 บาท
     { id: 302, name: "มะพร้าวนมสดปั่น", price: 40, img: "images/มะพร้าว/coconut-milk-blend.png", onlyBlend: true },
-  ]
+  ],
+  ขนม: [] // จะโหลดจาก Supabase
 };
+
+// ===== DESSERTS FROM SUPABASE =====
+let desserts = [];
+
+async function loadDesserts() {
+  const { data, error } = await sb.from("desserts").select("*").eq("visible", true).order("price");
+  if (!error && data) {
+    desserts = data;
+    MENU.ขนม = desserts.map(d => ({
+      id: 'dessert-' + d.id,
+      dessertId: d.id,
+      name: d.name_th,
+      price: d.price,
+      quantity: d.quantity,
+      img: d.image_url,
+      isDessert: true
+    }));
+    if (currentCategory === "ขนม") renderMenu();
+  }
+}
+
+function subscribeDesserts() {
+  sb.channel("desserts-customer")
+    .on("postgres_changes", { event: "*", schema: "public", table: "desserts" }, () => loadDesserts())
+    .subscribe();
+  setInterval(loadDesserts, 5000);
+}
 
 let cart = [], sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
 let currentCategory = "กาแฟ";
@@ -972,26 +1001,46 @@ function applyShopState(isOpen) {
 pollShopState();
 setInterval(pollShopState, 3000);
 
+// โหลดขนมจาก Supabase
+loadDesserts();
+subscribeDesserts();
+
 // ===== MENU =====
 function renderMenu() {
   const menuItems = MENU[currentCategory] || [];
-  document.getElementById("menuGrid").innerHTML = menuItems.map(item => `
-    <div class="menu-card" onclick="addToCart(${item.id})">
+  
+  // แสดงข้อความถ้าขนมหมด
+  if (currentCategory === "ขนม" && menuItems.length === 0) {
+    document.getElementById("menuGrid").innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3)"><i data-lucide="cookie" style="display:block;margin:0 auto 10px;width:48px;height:48px;stroke:var(--border)"></i>ขนมหมดแล้ว กำลังเตรียมเพิ่ม...</div>';
+    lucide.createIcons();
+    return;
+  }
+  
+  document.getElementById("menuGrid").innerHTML = menuItems.map(item => {
+    // ถ้าเป็นขนมและของหมด ให้แสดงแบบ disabled
+    const isOutOfStock = item.isDessert && item.quantity <= 0;
+    const stockBadge = item.isDessert ? `<span style="position:absolute;top:8px;right:8px;background:${isOutOfStock?'#fee2e2':'rgba(255,255,255,0.92)'};color:${isOutOfStock?'#ef4444':'var(--text-2)'};font-size:0.7rem;padding:3px 8px;border-radius:12px;font-weight:600;">${isOutOfStock?'หมดแล้ว':'เหลือ '+item.quantity}</span>` : '';
+    const clickHandler = isOutOfStock ? '' : (item.isDessert ? `addDessertToCart('${item.dessertId}')` : `addToCart(${item.id})`);
+    
+    return `
+    <div class="menu-card" onclick="${clickHandler}" style="${isOutOfStock?'opacity:0.5;cursor:not-allowed':'cursor:pointer'}">
       <div class="img-wrap">
+        ${stockBadge}
         ${item.img ? `<img src="${item.img}?v=2" alt="${item.name}"
           onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
         <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
-          <i data-lucide="cup-soda"></i>
+          <i data-lucide="${item.isDessert?'cookie':'cup-soda'}"></i>
         </div>
         <span class="price-chip">${item.price} ฿</span>
       </div>
       <div class="card-body">
         <span class="card-name">${item.name}</span>
-        <button class="btn-add" onclick="event.stopPropagation();addToCart(${item.id})">
+        ${!isOutOfStock ? `<button class="btn-add" onclick="event.stopPropagation();${item.isDessert?`addDessertToCart('${item.dessertId}')`:`addToCart(${item.id})`}">
           <i data-lucide="plus"></i>
-        </button>
+        </button>` : ''}
       </div>
-    </div>`).join("");
+    </div>`
+  }).join("");
   lucide.createIcons();
 }
 
@@ -1016,7 +1065,8 @@ function switchCategory(category) {
     'ชานม': 'เมนูชา/ชานม',
     'มัทฉะ': 'เมนูมัทฉะ',
     'โซดา': 'เมนูโซดา',
-    'มะพร้าว': 'เมนูมะพร้าว'
+    'มะพร้าว': 'เมนูมะพร้าว',
+    'ขนม': 'เมนูขนม'
   };
   document.getElementById('menuLabel').textContent = labels[category] || 'เมนู';
   
@@ -1150,6 +1200,33 @@ function confirmAddToCart() {
 function removeLineItem(lineId) {
   cart = cart.filter(l => l.lineId !== lineId);
   renderCart();
+}
+
+// ===== ADD DESSERT TO CART =====
+function addDessertToCart(dessertId) {
+  const dessert = desserts.find(d => d.id === dessertId);
+  if (!dessert || dessert.quantity <= 0) {
+    alert('ขนมหมดแล้ว กรุณาเลือกเมนูอื่น');
+    return;
+  }
+  
+  cart.push({
+    lineId: Date.now() + Math.random(),
+    menuId: 'dessert-' + dessertId,
+    dessertId: dessertId,
+    name: dessert.name_th,
+    price: dessert.price,
+    img: dessert.image_url,
+    sweet: '-',
+    temp: '-',
+    extras: [],
+    note: '',
+  });
+  
+  renderCart();
+  const fab = document.querySelector(".fab");
+  fab.style.transform = "scale(1.2)";
+  setTimeout(() => fab.style.transform = "", 180);
 }
 
 // ===== CART =====
@@ -1426,9 +1503,28 @@ async function confirmOrderSubmit() {
   let note       = document.getElementById("custNote").value.trim();
 
   const total = cart.reduce((s, l) => s + l.price, 0);
-  const items = cart.map(l => ({ name: l.name, qty: 1, price: l.price, sweet: l.sweet, temp: l.temp, extras: l.extras || [], note: l.note || '' }));
+  const items = cart.map(l => ({ 
+    name: l.name, 
+    qty: 1, 
+    price: l.price, 
+    sweet: l.sweet || '-', 
+    temp: l.temp || '-', 
+    extras: l.extras || [], 
+    note: l.note || '',
+    dessertId: l.dessertId // เก็บ ID ขนมสำหรับลดสต็อก
+  }));
   const sweetDisplay = [...new Set(cart.map(l => l.sweet))].join(", ");
   const tempDisplay  = [...new Set(cart.map(l => l.temp))].join(", ");
+
+  // ===== ลดสต็อกขนมที่สั่ง =====
+  for (const item of items) {
+    if (item.dessertId) {
+      await sb.rpc('decrease_dessert_quantity', {
+        dessert_id: item.dessertId,
+        qty: item.qty
+      });
+    }
+  }
 
   // ===== สั่งเพิ่มในออเดอร์เดิม =====
   if (isAddingMore) {
