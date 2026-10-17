@@ -940,8 +940,41 @@ const MENU = {
 
 // ===== DESSERTS FROM SUPABASE =====
 let desserts = [];
+let dessertsVisible = false;
+
+async function checkDessertsVisible() {
+  const { data } = await sb.from("settings").select("value").eq("key", "dessertsVisible").single();
+  const wasVisible = dessertsVisible;
+  dessertsVisible = data ? data.value === "true" : false;
+  
+  // ถ้าสถานะเปลี่ยน ให้โหลดขนมใหม่หรือซ่อน
+  if (wasVisible !== dessertsVisible) {
+    if (dessertsVisible) {
+      await loadDesserts();
+    } else {
+      MENU.ขนม = [];
+      if (currentCategory === "ขนม") {
+        currentCategory = "กาแฟ";
+        switchCategory("กาแฟ");
+      }
+    }
+    updateDessertsTabVisibility();
+  }
+}
+
+function updateDessertsTabVisibility() {
+  const dessertTab = document.querySelector('.tab-btn[data-category="ขนม"]');
+  if (dessertTab) {
+    dessertTab.style.display = dessertsVisible ? '' : 'none';
+  }
+}
 
 async function loadDesserts() {
+  if (!dessertsVisible) {
+    MENU.ขนม = [];
+    return;
+  }
+  
   const { data, error } = await sb.from("desserts").select("*").eq("visible", true).order("price");
   if (!error && data) {
     desserts = data;
@@ -959,10 +992,20 @@ async function loadDesserts() {
 }
 
 function subscribeDesserts() {
+  // ติดตามการเปลี่ยนแปลงขนม
   sb.channel("desserts-customer")
     .on("postgres_changes", { event: "*", schema: "public", table: "desserts" }, () => loadDesserts())
     .subscribe();
-  setInterval(loadDesserts, 5000);
+  
+  // ติดตามการ deploy/undeploy
+  sb.channel("desserts-visible")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings", filter: "key=eq.dessertsVisible" }, () => checkDessertsVisible())
+    .subscribe();
+  
+  setInterval(() => {
+    loadDesserts();
+    checkDessertsVisible();
+  }, 5000);
 }
 
 let cart = [], sweet = "ปกติ", temp = "เย็น", tempExtra = 0;
@@ -1002,8 +1045,10 @@ pollShopState();
 setInterval(pollShopState, 3000);
 
 // โหลดขนมจาก Supabase
+checkDessertsVisible();
 loadDesserts();
 subscribeDesserts();
+updateDessertsTabVisibility();
 
 // ===== MENU =====
 function renderMenu() {

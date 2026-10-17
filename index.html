@@ -447,7 +447,12 @@
   <!-- DESSERTS MANAGEMENT -->
   <div class="top-row" style="margin-top:32px">
     <div class="section-label">จัดการขนม</div>
-    <button class="btn-clear" style="border-color:#a7f3d0;color:var(--green)" onclick="addDessert()">+ เพิ่มขนม</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-clear" id="btnDeployDesserts" style="border-color:#a7f3d0;color:var(--green)" onclick="toggleDeployDesserts()">
+        🚀 Deploy ขนม
+      </button>
+      <button class="btn-clear" style="border-color:#a7f3d0;color:var(--green)" onclick="addDessert()">+ เพิ่มขนม</button>
+    </div>
   </div>
   <div id="dessertList"></div>
 </main>
@@ -465,7 +470,7 @@ function doLogin() {
     sessionStorage.setItem("adminAuth", "1");
     document.getElementById("loginOverlay").classList.add("hidden");
     loadShopState(); loadOrders(); subscribeOrders();
-    loadDessertsList(); subscribeDesserts();
+    loadDessertsList(); subscribeDesserts(); loadDeployState();
   } else {
     const inp = document.getElementById("pwInput");
     inp.classList.remove("shake"); void inp.offsetWidth;
@@ -1026,10 +1031,53 @@ function subscribeDesserts() {
     .subscribe();
 }
 
+// ===== DEPLOY DESSERTS =====
+let dessertsDeployed = false;
+
+async function loadDeployState() {
+  const { data } = await sb.from("settings").select("value").eq("key", "dessertsVisible").single();
+  dessertsDeployed = data ? data.value === "true" : false;
+  updateDeployButton();
+}
+
+function updateDeployButton() {
+  const btn = document.getElementById("btnDeployDesserts");
+  if (dessertsDeployed) {
+    btn.textContent = "✅ ขนมกำลังขาย";
+    btn.style.background = "var(--green-light)";
+    btn.style.color = "var(--green)";
+    btn.style.borderColor = "#a7f3d0";
+  } else {
+    btn.textContent = "🚀 Deploy ขนม";
+    btn.style.background = "";
+    btn.style.color = "var(--green)";
+    btn.style.borderColor = "#a7f3d0";
+  }
+}
+
+async function toggleDeployDesserts() {
+  const newState = !dessertsDeployed;
+  const confirmMsg = newState 
+    ? "ยืนยัน Deploy ขนมให้ลูกค้าเห็น?" 
+    : "ยืนยันปิดการแสดงขนม? ลูกค้าจะไม่เห็นเมนูขนม";
+  
+  if (!confirm(confirmMsg)) return;
+  
+  const { error } = await sb.from("settings").update({ value: String(newState) }).eq("key", "dessertsVisible");
+  if (error) { 
+    console.error(error); 
+    alert("เกิดข้อผิดพลาด"); 
+    return; 
+  }
+  
+  dessertsDeployed = newState;
+  updateDeployButton();
+}
+
 if (sessionStorage.getItem("adminAuth") === "1") {
   document.getElementById("loginOverlay").classList.add("hidden");
   loadShopState(); loadOrders(); subscribeOrders();
-  loadDessertsList(); subscribeDesserts();
+  loadDessertsList(); subscribeDesserts(); loadDeployState();
   requestNotifyPermission();
 } else {
   renderShopUI();
