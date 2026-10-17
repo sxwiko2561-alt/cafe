@@ -801,7 +801,7 @@
       <div class="opt-section-label">ความหวาน</div>
       <div class="tag-group" id="optSweetTags">
         <button class="tag active" data-val="100%">100%</button>
-        <button class="tag" data-val="ปกติ">ปกติ</button>
+        <button class="tag" data-val= "ปกติ">ปกติ</button>
         <button class="tag" data-val="50%">50%</button>
         <button class="tag" data-val="25%">25%</button>
         <button class="tag" data-val="0%">0%</button>
@@ -1068,13 +1068,26 @@ function renderMenu() {
   document.getElementById("menuGrid").innerHTML = menuItems.map(item => {
     // ถ้าเป็นขนมและของหมด ให้แสดงแบบ disabled
     const isOutOfStock = item.isDessert && item.quantity <= 0;
-    const stockBadge = item.isDessert ? `<span style="position:absolute;top:8px;right:8px;background:${isOutOfStock?'#fee2e2':'rgba(255,255,255,0.92)'};color:${isOutOfStock?'#ef4444':'var(--text-2)'};font-size:0.7rem;padding:3px 8px;border-radius:12px;font-weight:600;">${isOutOfStock?'หมดแล้ว':'เหลือ '+item.quantity}</span>` : '';
     const clickHandler = isOutOfStock ? '' : (item.isDessert ? `addDessertToCart('${item.dessertId}')` : `addToCart(${item.id})`);
     
+    // สำหรับขนม: แสดงจำนวนคงเหลือชัดเจน
+    let itemNameDisplay = item.name;
+    let stockStyle = '';
+    if (item.isDessert) {
+      if (isOutOfStock) {
+        itemNameDisplay = `${item.name}<br><span style="color:#ef4444;font-size:0.75rem;font-weight:700;">❌ หมดแล้ว</span>`;
+        stockStyle = 'opacity:0.5;cursor:not-allowed';
+      } else {
+        itemNameDisplay = `${item.name}<br><span style="color:#ef4444;font-size:0.75rem;font-weight:700;">🔥 เหลือ ${item.quantity} ชิ้น</span>`;
+        stockStyle = 'cursor:pointer';
+      }
+    } else {
+      stockStyle = 'cursor:pointer';
+    }
+    
     return `
-    <div class="menu-card" onclick="${clickHandler}" style="${isOutOfStock?'opacity:0.5;cursor:not-allowed':'cursor:pointer'}">
+    <div class="menu-card" onclick="${clickHandler}" style="${stockStyle}">
       <div class="img-wrap">
-        ${stockBadge}
         ${item.img ? `<img src="${item.img}?v=2" alt="${item.name}"
           onerror="this.style.display='none';document.getElementById('if-${item.id}').style.display='flex'" loading="lazy"/>` : ''}
         <div class="icon-fallback" id="if-${item.id}" style="display:${item.img ? 'none' : 'flex'}">
@@ -1083,7 +1096,7 @@ function renderMenu() {
         <span class="price-chip">${item.price} ฿</span>
       </div>
       <div class="card-body">
-        <span class="card-name">${item.name}</span>
+        <div class="card-name" style="line-height:1.4">${itemNameDisplay}</div>
         ${!isOutOfStock ? `<button class="btn-add" onclick="event.stopPropagation();${item.isDessert?`addDessertToCart('${item.dessertId}')`:`addToCart(${item.id})`}">
           <i data-lucide="plus"></i>
         </button>` : ''}
