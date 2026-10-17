@@ -977,6 +977,7 @@ async function loadDesserts() {
   
   const { data, error } = await sb.from("desserts").select("*").eq("visible", true).order("price");
   if (!error && data) {
+    console.log("📦 โหลดขนม:", data); // Debug
     desserts = data;
     MENU.ขนม = desserts.map(d => ({
       id: 'dessert-' + d.id,
@@ -987,7 +988,10 @@ async function loadDesserts() {
       img: d.image_url,
       isDessert: true
     }));
+    console.log("🍪 MENU.ขนม:", MENU.ขนม); // Debug
     if (currentCategory === "ขนม") renderMenu();
+  } else if (error) {
+    console.error("❌ โหลดขนมผิดพลาด:", error);
   }
 }
 
