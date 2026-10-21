@@ -1252,9 +1252,36 @@ function closeOptModal(e) {
 
 function confirmAddToCart() {
   if (!optModalItem) return;
+  
+  // สำหรับขนม: ใช้ optModalItem แทน
+  if (optModalItem.isDessert) {
+    const extraPrice = optTempExtra; // แค่ค่าปั่น (ถ้ามี)
+    
+    cart.push({
+      lineId: Date.now() + Math.random(),
+      menuId: optModalItem.id,
+      dessertId: optModalItem.dessertId,
+      name: optModalItem.name,
+      price: optModalItem.price + extraPrice,
+      img: optModalItem.img,
+      sweet: '-', // ไม่มีความหวาน
+      temp: optTemp,
+      extras: [],
+      note: '',
+    });
+    
+    document.getElementById("optModalOverlay").classList.remove("show");
+    renderCart();
+    const fab = document.querySelector(".fab");
+    fab.style.transform = "scale(1.2)";
+    setTimeout(() => fab.style.transform = "", 180);
+    return;
+  }
+  
+  // สำหรับเครื่องดื่มปกติ
   const extraPrice = optTempExtra + optExtras.reduce((s, e) => s + e.price, 0);
   const extraNames = optExtras.map(e => e.name);
-  const itemNote = document.getElementById("optItemNote").value.trim(); // เก็บหมายเหตุแก้วนี้
+  const itemNote = document.getElementById("optItemNote").value.trim();
   
   cart.push({
     lineId: Date.now() + Math.random(),
@@ -1265,11 +1292,11 @@ function confirmAddToCart() {
     sweet:  optSweet,
     temp:   optTemp,
     extras: extraNames,
-    note:   itemNote, // บันทึกหมายเหตุ
+    note:   itemNote,
   });
   
   document.getElementById("optModalOverlay").classList.remove("show");
-  document.getElementById("optItemNote").value = ""; // ล้างหมายเหตุ
+  document.getElementById("optItemNote").value = "";
   renderCart();
   const fab = document.querySelector(".fab");
   fab.style.transform = "scale(1.2)";
@@ -1298,23 +1325,65 @@ function addDessertToCart(dessertId) {
     return;
   }
   
-  cart.push({
-    lineId: Date.now() + Math.random(),
-    menuId: 'dessert-' + dessertId,
-    dessertId: dessertId,
+  // เปิด modal ให้เลือกอุณหภูมิ (เย็น/ปั่น)
+  optModalItem = {
+    id: 'dessert-' + dessertId,
     name: dessert.name_th,
     price: dessert.price,
     img: dessert.image_url,
-    sweet: '-',
-    temp: '-',
-    extras: [],
-    note: '',
-  });
+    isDessert: true,
+    dessertId: dessertId,
+    onlyTemp: true // บอกว่าแสดงแค่อุณหภูมิ
+  };
   
-  renderCart();
-  const fab = document.querySelector(".fab");
-  fab.style.transform = "scale(1.2)";
-  setTimeout(() => fab.style.transform = "", 180);
+  // Reset options
+  optSweet = '-'; // ไม่มีความหวาน
+  optTemp = 'เย็น'; 
+  optTempExtra = 0;
+  optExtras = [];
+  
+  // Setup modal
+  const imgEl = document.getElementById("optModalImg");
+  const iconEl = document.getElementById("optModalImgIcon");
+  if (dessert.image_url) {
+    imgEl.src = dessert.image_url + "?v=4"; 
+    imgEl.style.display = "";
+    iconEl.style.display = "none";
+  } else {
+    imgEl.style.display = "none"; 
+    iconEl.style.display = "flex";
+    iconEl.innerHTML = '<i data-lucide="cookie"></i>';
+  }
+  
+  document.getElementById("optModalName").textContent = dessert.name_th;
+  document.getElementById("optModalPrice").textContent = dessert.price + " ฿";
+  
+  // ซ่อนส่วนความหวาน
+  const sweetSection = document.querySelector('.opt-section:has(#optSweetTags)');
+  if (sweetSection) sweetSection.style.display = "none";
+  
+  // แสดงส่วนอุณหภูมิ (เย็น/ปั่น)
+  const tempSection = document.querySelector('.opt-section:has(#optTempTags)');
+  if (tempSection) tempSection.style.display = "block";
+  
+  const coldBtn = document.querySelector('#optTempTags .tag[data-val="เย็น"]');
+  const blendBtn = document.querySelector('#optTempTags .tag[data-val="ปั่น"]');
+  if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
+  if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.remove("active"); }
+  
+  // ซ่อนส่วนท็อปปิ้ง
+  const toppingSection = document.getElementById("optToppingSection");
+  if (toppingSection) toppingSection.style.display = "none";
+  
+  const oreoSection = document.getElementById("optOreoSection");
+  if (oreoSection) oreoSection.style.display = "none";
+  
+  const extraSection = document.querySelector('.opt-section:has(#optExtraTags)');
+  if (extraSection) extraSection.style.display = "none";
+  
+  // แสดง modal
+  document.getElementById("optModalOverlay").classList.add("show");
+  lucide.createIcons();
 }
 
 // ===== CART =====
@@ -1332,13 +1401,24 @@ function renderCart() {
   const rows = cart.map(line => {
     sum += line.price;
     const noteHTML = line.note ? `<div class="cart-item-note"><i data-lucide="message-square"></i> ${line.note}</div>` : '';
+    const isDessert = line.dessertId ? true : false;
+    const icon = isDessert ? 'cookie' : 'cup-soda';
+    
+    // สำหรับขนม: แสดงแค่อุณหภูมิ
+    let optsText = '';
+    if (isDessert) {
+      optsText = line.temp || '';
+    } else {
+      optsText = `${line.sweet} · ${line.temp}${line.extras && line.extras.length ? ' · ' + line.extras.join(' · ') : ''}`;
+    }
+    
     return `<div class="cart-row">
       ${line.img
-        ? `<img class="cart-thumb" src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=cup-soda></i></div>'"/>`
-        : '<div class="cart-thumb-icon"><i data-lucide="cup-soda"></i></div>'}
+        ? `<img class="cart-thumb" src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<div class=cart-thumb-icon><i data-lucide=${icon}></i></div>'"/>`
+        : `<div class="cart-thumb-icon"><i data-lucide="${icon}"></i></div>`}
       <div style="flex:1;min-width:0">
         <div class="cart-item-name">${line.name}</div>
-        <div class="cart-item-opts">${line.sweet} · ${line.temp}${line.extras && line.extras.length ? ' · ' + line.extras.join(' · ') : ''}</div>
+        ${optsText ? `<div class="cart-item-opts">${optsText}</div>` : ''}
         ${noteHTML}
       </div>
       <span class="item-price">${line.price} ฿</span>
@@ -1498,20 +1578,33 @@ function showOrderSummary() {
   // สร้าง HTML รายการสั่งซื้อ
   const itemsHTML = cart.map((line, idx) => {
     const noteHTML = line.note ? `<div class="summary-item-note"><i data-lucide="message-square"></i> ${line.note}</div>` : '';
+    
+    // ตรวจสอบว่าเป็นขนมหรือไม่
+    const isDessert = line.dessertId ? true : false;
+    
+    // สำหรับขนม: แสดงแค่อุณหภูมิ
+    let optsHTML = '';
+    if (isDessert) {
+      optsHTML = line.temp ? `<span><i data-lucide="thermometer"></i> ${line.temp}</span>` : '';
+    } else {
+      // เครื่องดื่ม: แสดงทั้งหมด
+      optsHTML = `
+        <span><i data-lucide="droplet"></i> ${line.sweet}</span>
+        <span><i data-lucide="thermometer"></i> ${line.temp}</span>
+        ${line.extras && line.extras.length ? '<span><i data-lucide="plus-circle"></i> ' + line.extras.join(', ') + '</span>' : ''}
+      `;
+    }
+    
     return `
     <div class="summary-item">
       <div class="summary-item-icon">
         ${line.img 
-          ? `<img src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<i data-lucide=cup-soda></i>'"/>` 
-          : '<i data-lucide="cup-soda"></i>'}
+          ? `<img src="${line.img}" alt="${line.name}" onerror="this.outerHTML='<i data-lucide=${isDessert?'cookie':'cup-soda'}></i>'"/>` 
+          : `<i data-lucide="${isDessert?'cookie':'cup-soda'}"></i>`}
       </div>
       <div class="summary-item-details">
         <div class="summary-item-name">${line.name}</div>
-        <div class="summary-item-opts">
-          <span><i data-lucide="droplet"></i> ${line.sweet}</span>
-          <span><i data-lucide="thermometer"></i> ${line.temp}</span>
-          ${line.extras && line.extras.length ? '<span><i data-lucide="plus-circle"></i> ' + line.extras.join(', ') + '</span>' : ''}
-        </div>
+        ${optsHTML ? `<div class="summary-item-opts">${optsHTML}</div>` : ''}
         ${noteHTML}
       </div>
       <div class="summary-item-price">${line.price} ฿</div>
