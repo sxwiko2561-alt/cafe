@@ -1253,31 +1253,6 @@ function closeOptModal(e) {
 function confirmAddToCart() {
   if (!optModalItem) return;
   
-  // สำหรับขนม: ใช้ optModalItem แทน
-  if (optModalItem.isDessert) {
-    const extraPrice = optTempExtra; // แค่ค่าปั่น (ถ้ามี)
-    
-    cart.push({
-      lineId: Date.now() + Math.random(),
-      menuId: optModalItem.id,
-      dessertId: optModalItem.dessertId,
-      name: optModalItem.name,
-      price: optModalItem.price + extraPrice,
-      img: optModalItem.img,
-      sweet: '-', // ไม่มีความหวาน
-      temp: optTemp,
-      extras: [],
-      note: '',
-    });
-    
-    document.getElementById("optModalOverlay").classList.remove("show");
-    renderCart();
-    const fab = document.querySelector(".fab");
-    fab.style.transform = "scale(1.2)";
-    setTimeout(() => fab.style.transform = "", 180);
-    return;
-  }
-  
   // สำหรับเครื่องดื่มปกติ
   const extraPrice = optTempExtra + optExtras.reduce((s, e) => s + e.price, 0);
   const extraNames = optExtras.map(e => e.name);
@@ -1325,69 +1300,26 @@ function addDessertToCart(dessertId) {
     return;
   }
   
-  // เปิด modal ให้เลือกอุณหภูมิ (เย็น/ปั่น)
-  optModalItem = {
-    id: 'dessert-' + dessertId,
+  // เพิ่มขนมลงตะกร้าโดยตรง ไม่ต้องเปิด modal
+  cart.push({
+    lineId: Date.now() + Math.random(),
+    menuId: 'dessert-' + dessertId,
+    dessertId: dessertId,
     name: dessert.name_th,
     price: dessert.price,
     img: dessert.image_url,
-    isDessert: true,
-    dessertId: dessertId,
-    onlyTemp: true // บอกว่าแสดงแค่อุณหภูมิ
-  };
+    sweet: '-',
+    temp: '-',
+    extras: [],
+    note: '',
+  });
   
-  // Reset options
-  optSweet = '-'; // ไม่มีความหวาน
-  optTemp = 'เย็น'; 
-  optTempExtra = 0;
-  optExtras = [];
+  renderCart();
   
-  // Setup modal
-  const imgEl = document.getElementById("optModalImg");
-  const iconEl = document.getElementById("optModalImgIcon");
-  if (dessert.image_url) {
-    imgEl.src = dessert.image_url + "?v=4"; 
-    imgEl.style.display = "";
-    iconEl.style.display = "none";
-  } else {
-    imgEl.style.display = "none"; 
-    iconEl.style.display = "flex";
-    iconEl.innerHTML = '<i data-lucide="cookie"></i>';
-  }
-  
-  document.getElementById("optModalName").textContent = dessert.name_th;
-  document.getElementById("optModalPrice").textContent = dessert.price + " ฿";
-  
-  // ซ่อนส่วนความหวาน สำหรับขนม
-  const sweetSection = document.querySelector('.opt-section:has(#optSweetTags)');
-  if (sweetSection) sweetSection.style.display = "none";
-  
-  // แสดงส่วนอุณหภูมิ (เย็น/ปั่น +5฿)
-  const tempSection = document.querySelector('.opt-section:has(#optTempTags)');
-  if (tempSection) tempSection.style.display = "block";
-  
-  const coldBtn = document.querySelector('#optTempTags .tag[data-val="เย็น"]');
-  const blendBtn = document.querySelector('#optTempTags .tag[data-val="ปั่น"]');
-  if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
-  if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.remove("active"); }
-  
-  // ซ่อนส่วนท็อปปิ้ง สำหรับขนม
-  const toppingSection = document.getElementById("optToppingSection");
-  if (toppingSection) toppingSection.style.display = "none";
-  
-  const oreoSection = document.getElementById("optOreoSection");
-  if (oreoSection) oreoSection.style.display = "none";
-  
-  const extraSection = document.querySelector('.opt-section:has(#optExtraTags)');
-  if (extraSection) extraSection.style.display = "none";
-  
-  // ซ่อนส่วนหมายเหตุแก้ว สำหรับขนม
-  const noteSection = document.querySelector('.opt-section:has(#optItemNote)');
-  if (noteSection) noteSection.style.display = "none";
-  
-  // แสดง modal
-  document.getElementById("optModalOverlay").classList.add("show");
-  lucide.createIcons();
+  // Animation ปุ่ม FAB
+  const fab = document.querySelector(".fab");
+  fab.style.transform = "scale(1.2)";
+  setTimeout(() => fab.style.transform = "", 180);
 }
 
 // ===== CART =====
@@ -1408,11 +1340,9 @@ function renderCart() {
     const isDessert = line.dessertId ? true : false;
     const icon = isDessert ? 'cookie' : 'cup-soda';
     
-    // สำหรับขนม: แสดงแค่อุณหภูมิ
+    // สำหรับขนม: ไม่แสดงอะไรเลย
     let optsText = '';
-    if (isDessert) {
-      optsText = line.temp || '';
-    } else {
+    if (!isDessert) {
       optsText = `${line.sweet} · ${line.temp}${line.extras && line.extras.length ? ' · ' + line.extras.join(' · ') : ''}`;
     }
     
@@ -1586,11 +1516,9 @@ function showOrderSummary() {
     // ตรวจสอบว่าเป็นขนมหรือไม่
     const isDessert = line.dessertId ? true : false;
     
-    // สำหรับขนม: แสดงแค่อุณหภูมิ
+    // สำหรับขนม: ไม่แสดงอะไร
     let optsHTML = '';
-    if (isDessert) {
-      optsHTML = line.temp ? `<span><i data-lucide="thermometer"></i> ${line.temp}</span>` : '';
-    } else {
+    if (!isDessert) {
       // เครื่องดื่ม: แสดงทั้งหมด
       optsHTML = `
         <span><i data-lucide="droplet"></i> ${line.sweet}</span>
