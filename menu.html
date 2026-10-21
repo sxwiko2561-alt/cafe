@@ -1358,11 +1358,11 @@ function addDessertToCart(dessertId) {
   document.getElementById("optModalName").textContent = dessert.name_th;
   document.getElementById("optModalPrice").textContent = dessert.price + " ฿";
   
-  // ซ่อนส่วนความหวาน
+  // ซ่อนส่วนความหวาน สำหรับขนม
   const sweetSection = document.querySelector('.opt-section:has(#optSweetTags)');
   if (sweetSection) sweetSection.style.display = "none";
   
-  // แสดงส่วนอุณหภูมิ (เย็น/ปั่น)
+  // แสดงส่วนอุณหภูมิ (เย็น/ปั่น +5฿)
   const tempSection = document.querySelector('.opt-section:has(#optTempTags)');
   if (tempSection) tempSection.style.display = "block";
   
@@ -1371,7 +1371,7 @@ function addDessertToCart(dessertId) {
   if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
   if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.remove("active"); }
   
-  // ซ่อนส่วนท็อปปิ้ง
+  // ซ่อนส่วนท็อปปิ้ง สำหรับขนม
   const toppingSection = document.getElementById("optToppingSection");
   if (toppingSection) toppingSection.style.display = "none";
   
@@ -1380,6 +1380,10 @@ function addDessertToCart(dessertId) {
   
   const extraSection = document.querySelector('.opt-section:has(#optExtraTags)');
   if (extraSection) extraSection.style.display = "none";
+  
+  // ซ่อนส่วนหมายเหตุแก้ว สำหรับขนม
+  const noteSection = document.querySelector('.opt-section:has(#optItemNote)');
+  if (noteSection) noteSection.style.display = "none";
   
   // แสดง modal
   document.getElementById("optModalOverlay").classList.add("show");
