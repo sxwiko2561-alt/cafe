@@ -1201,17 +1201,11 @@ function addToCart(id) {
     if (tempSection) tempSection.style.display = "none";
     optTemp = "ปั่น";
     optTempExtra = 0; // ไม่มีค่าเพิ่ม
-  } else if (item.hasBlend) {
-    // มีทั้งเย็นและปั่น
-    if (tempSection) tempSection.style.display = "block";
-    if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
-    if (blendBtn) blendBtn.style.display = "";
-    optTemp = "เย็น";
   } else {
-    // เย็นอย่างเดียว
+    // ทุกเมนู: แสดงทั้งเย็นและปั่น +5฿
     if (tempSection) tempSection.style.display = "block";
     if (coldBtn) { coldBtn.style.display = ""; coldBtn.classList.add("active"); }
-    if (blendBtn) blendBtn.style.display = "none";
+    if (blendBtn) { blendBtn.style.display = ""; blendBtn.classList.remove("active"); }
     optTemp = "เย็น";
   }
 
