@@ -1092,7 +1092,7 @@ function renderMenu() {
     let stockStyle = '';
     if (item.isDessert) {
       if (isOutOfStock) {
-        itemNameDisplay = `${item.name}<br><span style="color:#ef4444;font-size:0.75rem;font-weight:700;">❌ หมดแล้ว</span>`;
+        itemNameDisplay = `${item.name}<br><span style="color:#fff;background:#ef4444;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-block;margin-top:4px;">SOLD OUT</span>`;
         stockStyle = 'opacity:0.5;cursor:not-allowed';
       } else if (isFull) {
         itemNameDisplay = `${item.name}<br><span style="color:#f59e0b;font-size:0.75rem;font-weight:700;">⚠️ ใส่ตะกร้าครบแล้ว (${item.quantity}/${item.quantity})</span>`;
@@ -1704,15 +1704,7 @@ async function confirmOrderSubmit() {
   const sweetDisplay = [...new Set(cart.map(l => l.sweet))].join(", ");
   const tempDisplay  = [...new Set(cart.map(l => l.temp))].join(", ");
 
-  // ===== ลดสต็อกขนมที่สั่ง =====
-  for (const item of items) {
-    if (item.dessertId) {
-      await sb.rpc('decrease_dessert_quantity', {
-        dessert_id: item.dessertId,
-        qty: item.qty
-      });
-    }
-  }
+  // หมายเหตุ: ไม่ต้องลดสต็อกขนมอัตโนมัติ แอดมินจะจัดการเอง
 
   // ===== สั่งเพิ่มในออเดอร์เดิม =====
   if (isAddingMore) {
